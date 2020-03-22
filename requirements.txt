@@ -1,0 +1,4 @@
+mintapi==1.41
+chromedriver-py==81.0.4044.69
+boto3
+python-dateutil
