@@ -1,0 +1,5 @@
+ofxclient
+boto3
+python-dateutil
+aws-socks
+ofxparse

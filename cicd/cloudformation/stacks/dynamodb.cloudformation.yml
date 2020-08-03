@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ''
+Parameters:
+  Name:
+    Description: Personal Budget
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    ConstraintDescription: Must be one of dev, test, or prod
+  DailyOfxLambdaArtifact:
+    Type: String
+    Description: Name of file that contains lambda code
+    Default: lambda_function.zip
+  Version:
+    Type: String
+    Description: Version of file that contains lambda code
+    Default: 0.0.1
+
+Resources:
+  TransactionsTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "${Environment}-personal-budget-transactions"
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: date  # The sort key.
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
