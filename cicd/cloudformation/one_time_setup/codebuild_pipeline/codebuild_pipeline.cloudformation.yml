@@ -14,7 +14,7 @@ Resources:
   CodeBuildArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: personal-budget
+      BucketName: my-personal-budget
       PublicAccessBlockConfiguration:
         BlockPublicPolicy: true
         RestrictPublicBuckets: true
@@ -157,7 +157,7 @@ Resources:
           - Arn
       Source:
         GitCloneDepth: 1
-        Location: https://github.com/jones-chris/QueryBuilder4JMVC.git
+        Location: https://github.com/jones-chris/personal-budget.git
         ReportBuildStatus: true
         Type: GITHUB
       BadgeEnabled: true
