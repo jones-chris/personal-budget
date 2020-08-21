@@ -10,7 +10,7 @@ phases:
     runtime-versions:
       python: 3.8
     commands:
-      # Get information about this image, the current directory, maven version, docker version, then update apt-get.
+      # Get information about this image, the current directory and update apt-get.
       - lsb_release -a
       - pwd
       - apt-get update
@@ -19,7 +19,7 @@ phases:
   pre_build:
     commands:
       # Set environment variables.
-      - PROJECT_VERSION=$(cat cicd/manifest.json | jq '.version')
+      - PROJECT_VERSION=$(cat cicd/manifest.json | jq -r '.version')
 
   build:
     commands:

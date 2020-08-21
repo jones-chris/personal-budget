@@ -53,11 +53,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: "Extracts bank transaction data and saves it to dynamo"
-      FunctionName:
-        Fn::Join:
-          - "-"
-          - - Ref: Environment
-            - Ref: Name
+      FunctionName: !Ref Name
       Handler: lambda_function.lambda_handler
       MemorySize: 512
       Timeout: 300
