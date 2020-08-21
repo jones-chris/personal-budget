@@ -54,7 +54,7 @@ Resources:
     Properties:
       Description: "Extracts bank transaction data and saves it to dynamo"
       FunctionName: !Ref Name
-      Handler: lambda_function.lambda_handler
+      Handler: main.lambda_handler
       MemorySize: 512
       Timeout: 300
       Code:
@@ -70,5 +70,6 @@ Resources:
           REGION_NAME: !Sub "${AWS::Region}"
           INSTITUTION_NAME: USAA
           USAA_CREDS_SECRET_NAME: usaa/creds
-          VERSION: !Ref Version
+          TRANSACTIONS_DYNAMO_TABLE_NAME: personal-budget-transactions
           NUM_OF_TRANSACTION_DAYS: 1
+          VERSION: !Ref Version
