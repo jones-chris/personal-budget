@@ -7,12 +7,12 @@ Resources:
     Properties:
       TableName: personal-budget-transactions
       KeySchema:
-        - AttributeName: id
+        - AttributeName: internal_id
           KeyType: HASH
         - AttributeName: date  # The sort key.
           KeyType: RANGE
       AttributeDefinitions:
-        - AttributeName: id
+        - AttributeName: internal_id
           AttributeType: S
         - AttributeName: date
           AttributeType: S
