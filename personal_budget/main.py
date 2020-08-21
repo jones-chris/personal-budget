@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from datetime import date
+from decimal import Decimal
 from typing import List
 
 import ofxclient
@@ -26,16 +28,30 @@ class Transaction:
     A Transaction object (not to be confused with an ofxclient.Transaction).
     """
     def __init__(self, transaction: ofxparse.Transaction, account: ofxclient.Account) -> None:
-        self.internal_id = f'{account.institution.org}.{account.number}.{transaction.id}'
-        self.payee = transaction.payee
-        self.type = transaction.type
-        self.date = transaction.date
-        self.amount = transaction.amount
-        self.institution_id = transaction.id
-        self.memo = transaction.memo
-        self.sic = transaction.sic
-        self.mcc = transaction.mcc
-        self.checknum = transaction.checknum
+        self.internal_id: str = f'{account.institution.org}.{account.number}.{transaction.id}'
+        self.payee: str = transaction.payee
+        self.type: str = transaction.type
+        self.date: date = transaction.date  # The sort key in dynamo.
+        self.amount: Decimal = transaction.amount
+        self.institution_id: str = account.institution.number  # The partition key in dynamo.
+        self.memo: str = transaction.memo
+        self.sic: str = transaction.sic
+        self.mcc: str = transaction.mcc
+        self.checknum: str = transaction.checknum
+
+    def to_dict(self):
+        return {
+            'internal_id': self.internal_id,
+            'payee': self.payee,
+            'type': self.type,
+            'date': self.date.strftime('%Y-%m-%d'),
+            'amount': self.amount,
+            'institution_id': self.institution_id,
+            'memo': self.memo,
+            'sic': self.sic,
+            'mcc': self.mcc,
+            'checknum': self.checknum
+        }
 
 
 def create_institution(institution_name: str, username: str, password: str) -> ofxclient.Institution:
@@ -98,7 +114,7 @@ def lambda_handler(event, context) -> bool:
             )
             socks.dynamodb.add_item(
                 table_name=dynamo_table_name,
-                item=dynamo_transaction.__dict__,
+                item=dynamo_transaction.to_dict(),
                 region_name=region_name
             )
 

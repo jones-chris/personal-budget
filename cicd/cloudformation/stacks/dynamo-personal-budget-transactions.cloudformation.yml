@@ -7,15 +7,18 @@ Resources:
     Properties:
       TableName: personal-budget-transactions
       KeySchema:
-        - AttributeName: internal_id
+        - AttributeName: institution_id
           KeyType: HASH
         - AttributeName: date  # The sort key.
           KeyType: RANGE
       AttributeDefinitions:
-        - AttributeName: internal_id
+        - AttributeName: institution_id
           AttributeType: S
         - AttributeName: date
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+
+
+
