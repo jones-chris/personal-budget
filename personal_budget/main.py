@@ -53,13 +53,14 @@ def create_institution(institution_name: str, username: str, password: str) -> o
     )
 
 
-def lambda_handler(event, context) -> int:
+def lambda_handler(event, context) -> bool:
     logger.info('In lambda_handler')
 
     region_name = os.environ['REGION_NAME']
     institution_name = os.environ['INSTITUTION_NAME']
-    usaa_creds_secret_name = os.environ.get('USAA_CREDS_SECRET_NAME')
-    dynamo_table_name = os.environ.get('TRANSACTIONS_DYNAMO_TABLE_NAME')
+    usaa_creds_secret_name = os.environ['USAA_CREDS_SECRET_NAME']
+    dynamo_table_name = os.environ['TRANSACTIONS_DYNAMO_TABLE_NAME']
+    num_of_transaction_days = os.environ['NUM_OF_TRANSACTION_DAYS']
 
     # Get institution member id and password from Secrets Manager.
     logger.info('Retrieving secret')
@@ -84,20 +85,23 @@ def lambda_handler(event, context) -> int:
     logger.info(f'Retrieved {len(accounts)} accounts')
 
     if len(accounts) == 0:
-        exit(1)
+        return False
 
     for account in accounts:
-        transactions = account.transactions(days=10)
+        transactions = account.transactions(days=int(num_of_transaction_days))
         logger.info(f'Retrieved {len(transactions)} transactions for account {account.number}')
 
         for transaction in transactions:
-            dynamo_transaction = Transaction(**transaction.__dict__)
+            dynamo_transaction = Transaction(
+                transaction=transaction,
+                account=account
+            )
             socks.dynamodb.add_item(
                 table_name=dynamo_table_name,
-                item=dynamo_transaction,
+                item=dynamo_transaction.__dict__,
                 region_name=region_name
             )
 
         logger.info(f'Finished saving transactions for account {account.number}')
 
-    exit(0)
+    return True

@@ -137,7 +137,6 @@ Resources:
       Artifacts:
         Location:
           Ref: CodeBuildArtifactBucket
-        Name: personal-budget.zip
         NamespaceType: BUILD_ID
         Packaging: ZIP
         Path: build/  # todo:  change this!

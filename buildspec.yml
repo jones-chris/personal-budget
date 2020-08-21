@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  shell: bash
+  exported-variables:
+    - PROJECT_VERSION
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      # Get information about this image, the current directory, maven version, docker version, then update apt-get.
+      - lsb_release -a
+      - pwd
+      - apt-get update
+      - apt-get install jq
+
+  pre_build:
+    commands:
+      # Set environment variables.
+      - PROJECT_VERSION=$(cat cicd/manifest.json | jq '.version')
+
+  build:
+    commands:
+      - bash ./cicd/buildspec_steps/build.bash "$PROJECT_VERSION"
+
+  post_build:
+    commands:
+      # Put artifacts in S3 and deploy CloudFormation templates.
+      - bash ./cicd/buildspec_steps/post_build.bash "$PROJECT_VERSION"
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
