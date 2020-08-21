@@ -67,6 +67,5 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          ENV: !Ref Environment
           VERSION: !Ref Version
           NUM_OF_TRANSACTION_DAYS: 1
