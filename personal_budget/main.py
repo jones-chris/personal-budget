@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal
 from typing import List
 
-import ofxclient
+import personal_budget.ofxclient as ofxclient
 import ofxparse
 import socks
 
@@ -33,7 +33,7 @@ class Transaction:
         self.type: str = transaction.type
         self.date: date = transaction.date  # The sort key in dynamo.
         self.amount: Decimal = transaction.amount
-        self.institution_id: str = account.institution.number  # The partition key in dynamo.
+        self.institution_id: str = account.institution.org  # The partition key in dynamo.
         self.memo: str = transaction.memo
         self.sic: str = transaction.sic
         self.mcc: str = transaction.mcc
@@ -65,7 +65,8 @@ def create_institution(institution_name: str, username: str, password: str) -> o
         org=institution_config['org'],
         url=institution_config['ofx_url'],
         username=username,
-        password=password
+        password=password,
+        use_in_mem_string_buffer=False
     )
 
 
@@ -104,7 +105,10 @@ def lambda_handler(event, context) -> bool:
         return False
 
     for account in accounts:
-        transactions = account.transactions(days=int(num_of_transaction_days))
+        transactions = account.transactions(
+            days=int(num_of_transaction_days)
+        )
+
         logger.info(f'Retrieved {len(transactions)} transactions for account {account.number}')
 
         for transaction in transactions:
