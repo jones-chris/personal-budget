@@ -116,6 +116,9 @@ def lambda_handler(event, context) -> bool:
                 transaction=transaction,
                 account=account
             )
+
+            # todo:  check if the item ID already exists before trying to write it.  We need this check because the internal
+            # todo:  id is not the partition key any more.
             socks.dynamodb.add_item(
                 table_name=dynamo_table_name,
                 item=dynamo_transaction.to_dict(),
