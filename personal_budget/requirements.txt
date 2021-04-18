@@ -1,5 +1,5 @@
 ofxclient==2.0.3
-boto3==1.14.46
 python-dateutil==2.8.1
-aws-socks==0.2.4
 ofxparse==0.20
+Flask==1.1.2
+openpyxl==3.0.7
