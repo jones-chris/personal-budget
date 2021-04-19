@@ -1,29 +1,19 @@
 import React, { Component } from "react";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
-import Transaction from "../Transaction/Transaction";
 
 class MenuBar extends Component {
 
 	constructor(props) {
 		super(props);
-
-		this.state = {
-			home: {
-				hidden: false
-			},
-			transactions: {
-				hidden: true
-			}
-		}
 	}
 
 	onShowTransactionSection = () => {
-		let newState = {...this.state};
+		let newState = {...this.props.state};
 		newState.home.hidden = true;
 		newState.transactions.hidden = false;
 
-		this.setState(newState)
+		this.props.setStateFunc(newState);
 	}
 
 	render() {
@@ -44,7 +34,7 @@ class MenuBar extends Component {
 	                <Navbar.Toggle aria-controls="basic-navbar-nav" />
 	                <Navbar.Collapse id="basic-navbar-nav">
 	                    <Nav className="mr-auto">
-	                        <Nav.Link className={this.state.transactions.hidden ? "nav-item active" : "nav-item"}
+	                        <Nav.Link className={this.props.state.transactions.hidden ? "nav-item active" : "nav-item"}
 	                                  onClick={this.onShowTransactionSection}
 	                        >
 	                            Transactions
@@ -59,10 +49,6 @@ class MenuBar extends Component {
 	                    </Button>*/}
 	                </Navbar.Collapse>
 	            </Navbar>
-
-	            <Transaction
-	            	hidden={this.state.transactions.hidden}
-	            />
             </div>
     	)
 	}

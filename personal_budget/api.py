@@ -1,14 +1,18 @@
 import datetime
 import logging
 from decimal import Decimal
-from typing import List
+from typing import List, Union
+
+import flask
 from flask import Flask, request
 from common.config import get_config
 from common.dao import Dao
 from personal_budget.common.models import Transaction, TransactionCategory, Category
 from itertools import groupby
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,7 +23,7 @@ DB_FILE_PATH: str = config['sqlite_db_file_path']
 
 
 @app.route('/transactions', methods=['GET'])
-def get_transactions():
+def get_transactions() -> tuple:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
 
@@ -43,7 +47,7 @@ def get_transactions():
 
 
 @app.route('/transactions/category', methods=['POST'])
-def update_transaction_category():
+def update_transaction_category() -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[TransactionCategory] = [TransactionCategory(**transaction_category) for transaction_category in request_body]
 
@@ -68,7 +72,7 @@ def update_transaction_category():
 
 
 @app.route('/category', methods=['POST', 'PUT'])
-def update_category():
+def update_category() -> int:
     request_body: dict = request.get_json()
     try:
         category: Category = Category(**request_body)
