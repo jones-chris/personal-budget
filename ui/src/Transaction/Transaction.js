@@ -97,11 +97,12 @@ class Transaction extends Component {
 		this.state.transactions.forEach(transaction => {
 			transactionsJsx.push(
 				<tr key={transaction.internal_id}>
-					<td>{transaction.internal_id}</td>
+					<td hidden>{transaction.internal_id}</td>
 					<td>{transaction.date}</td>
 					<td>{transaction.payee}</td>
 					<td>{transaction.amount}</td>
 					<td>{transaction.institution_id}</td>
+					<td>{transaction.category}</td>
 					<td>{transaction.checknum}</td>
 					<td>{transaction.memo}</td>
 					<td>{transaction.sic}</td>
@@ -116,11 +117,12 @@ class Transaction extends Component {
 				<Table striped bordered hover>
 					<thead>
 					    <tr>
-					      <th>Internal ID</th>
+					      <th hidden>Internal ID</th>
 					      <th>Date</th>
 					      <th>Payee</th>
 					      <th>Amount</th>
 					      <th>Institution ID</th>
+					      <th>Category</th>
 					      <th>Check Num</th>
 					      <th>Memo</th>
 					      <th>Sic</th>

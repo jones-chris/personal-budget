@@ -21,6 +21,7 @@ class Transaction:
             self.sic: str = transaction.sic
             self.mcc: str = transaction.mcc
             self.checknum: str = transaction.checknum
+            self.category: str = None
 
     @staticmethod
     def from_dict(**kwargs):
@@ -36,6 +37,7 @@ class Transaction:
         transaction.sic = kwargs['sic']
         transaction.mcc = kwargs['mcc']
         transaction.checknum = kwargs['checknum']
+        transaction.category = kwargs.get('category', None)
 
         return transaction
 

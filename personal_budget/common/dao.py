@@ -12,28 +12,50 @@ class Dao:
         cursor = db_connection.cursor()
 
         db_results = cursor.execute(
-            'SELECT internal_id, payee, type, amount, institution_id, memo, sic, mcc, checknum, date '
-            'FROM transactions '
-            'WHERE date BETWEEN ? and ? '
-            'ORDER BY date DESC',
+            '''
+            SELECT t.internal_id, 
+                   t.payee, 
+                   t.type, 
+                   CASE 
+                        WHEN tc.amount != null THEN tc.amount 
+                        ELSE t.amount 
+                   END AS amount, 
+                   t.institution_id, 
+                   t.memo, 
+                   t.sic, 
+                   t.mcc, 
+                   t.checknum, 
+                   t.date, 
+                   c.name AS category
+            FROM transactions t 
+            LEFT JOIN transaction_categories tc 
+              ON t.internal_id = tc.transaction_internal_id 
+            LEFT JOIN category c 
+              ON tc.category_id = c.id 
+            WHERE t.date BETWEEN ? and ? 
+            ORDER BY t.date DESC
+            ''',
             (start_date.strftime('%m/%d/%Y'), end_date.strftime('%m/%d/%Y'),)
         ).fetchall()
 
         transactions: List[Transaction] = []
         for row in db_results:
             transactions.append(
-                Transaction.from_dict(**{
-                    'internal_id': row[0],
-                    'payee': row[1],
-                    'type': row[2],
-                    'amount': row[3],
-                    'institution_id': row[4],
-                    'memo': row[5],
-                    'sic': row[6],
-                    'mcc': row[7],
-                    'checknum': row[8],
-                    'date': row[9]
-                })
+                Transaction.from_dict(
+                    **{
+                        'internal_id': row[0],
+                        'payee': row[1],
+                        'type': row[2],
+                        'amount': row[3],
+                        'institution_id': row[4],
+                        'memo': row[5],
+                        'sic': row[6],
+                        'mcc': row[7],
+                        'checknum': row[8],
+                        'date': row[9],
+                        'category': row[10]
+                    }
+                )
             )
 
         return transactions
@@ -67,14 +89,16 @@ class Dao:
             cursor.execute(
                 'INSERT INTO transactions (internal_id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (transaction.internal_id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None,)
+                (transaction.internal_id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None,
+                 None, None, None,)
             )
         else:
             cursor.execute(
                 'UPDATE transactions '
                 '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ? '
                 '    WHERE internal_id = ?',
-                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None, transaction.internal_id,)
+                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None,
+                 transaction.internal_id,)
             )
 
         db_connection.commit()
