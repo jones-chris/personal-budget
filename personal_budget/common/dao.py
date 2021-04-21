@@ -152,3 +152,28 @@ class Dao:
             )
 
         db_connection.commit()
+
+    @staticmethod
+    def get_categories(db_file_path: str) -> List[Category]:
+        db_connection = sqlite3.connect(db_file_path)
+        cursor = db_connection.cursor()
+
+        db_results = cursor.execute(
+            '''
+            SELECT id, name
+            FROM category
+            '''
+        ).fetchall()
+
+        categories: List[Category] = []
+        for row in db_results:
+            categories.append(
+                Category(
+                    **{
+                        'id': row[0],
+                        'name': row[1]
+                    }
+                )
+            )
+
+        return categories

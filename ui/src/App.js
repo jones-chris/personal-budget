@@ -3,6 +3,7 @@ import './App.css';
 import MenuBar from "./MenuBar/MenuBar";
 import React, { Component } from "react";
 import Transaction from "./Transaction/Transaction";
+import Category from "./Category/Category";
 
 
 class App extends Component {
@@ -16,6 +17,9 @@ class App extends Component {
           },
           transactions: {
             hidden: true
+          },
+          categories: {
+            hidden: true
           }
         }
     }
@@ -28,6 +32,9 @@ class App extends Component {
           />
 
           <Transaction hidden={this.state.transactions.hidden}
+          />
+
+          <Category hidden={this.state.categories.hidden}
           />
         </div>
       );

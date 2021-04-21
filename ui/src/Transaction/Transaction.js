@@ -8,9 +8,11 @@ class Transaction extends Component {
 		super(props);
 
 		this.state = {
+			initialized: false,
 			startDate: undefined,
 			endDate: undefined,
-			transactions: []
+			transactions: [],
+			categories: []
 		}
 	}
 
@@ -82,19 +84,42 @@ class Transaction extends Component {
 			newState.transactions = responseJson.transactions;
 			this.setState(newState);
 		 })
+	}
 
+	getCategories = () => {
+		fetch(
+            'http://localhost:5000/categories'
+		).then(response => response.json())
+		 .then(responseJson => {
+			let newState = {...this.state};
+			newState.categories = responseJson;
+			this.setState(newState);
+		 })
 	}
 
 	render() {
 		if (!this.props.hidden) {
-			if (this.state.transactions.length === 0) {
+			if (!this.state.initialized) {
 				this.getTransactions();
+				this.getCategories();
+				
+				this.setState({...this.state, initialized: true})
 			}
 		}
 
 		// Create transactions JSX.
 		let transactionsJsx = [];
 		this.state.transactions.forEach(transaction => {
+			// Create categories options JSX.
+			let categoriesJsx = [];
+			this.state.categories.forEach(category => {
+				categoriesJsx.push(
+					<option value={category} selected={transaction.category === category}>{category}</option>
+				)
+			});
+
+
+			// Create transaction row using categories options JSX.
 			transactionsJsx.push(
 				<tr key={transaction.internal_id}>
 					<td hidden>{transaction.internal_id}</td>
@@ -102,7 +127,12 @@ class Transaction extends Component {
 					<td>{transaction.payee}</td>
 					<td>{transaction.amount}</td>
 					<td>{transaction.institution_id}</td>
-					<td>{transaction.category}</td>
+					<td>
+						<select>
+							<option value=""></option>
+							{categoriesJsx}
+						</select>
+					</td>
 					<td>{transaction.checknum}</td>
 					<td>{transaction.memo}</td>
 					<td>{transaction.sic}</td>

@@ -1,15 +1,15 @@
 import datetime
 import logging
 from decimal import Decimal
+from itertools import groupby
 from typing import List, Union
 
-import flask
-from flask import Flask, request
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 from common.config import get_config
 from common.dao import Dao
 from personal_budget.common.models import Transaction, TransactionCategory, Category
-from itertools import groupby
-from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
@@ -82,6 +82,12 @@ def update_category() -> int:
     Dao.save_category(category, DB_FILE_PATH)
 
     return 201
+
+
+@app.route('/categories', methods=['GET'])
+def get_categories() -> tuple:
+    categories: List[Category] = Dao.get_categories(DB_FILE_PATH)
+    return jsonify(categories)
 
 
 if __name__ == '__main__':
