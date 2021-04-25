@@ -15,13 +15,14 @@ class Transaction:
             self.payee: str = transaction.payee
             self.type: str = transaction.type
             self.date: date = transaction.date  # The sort key in dynamo.
-            self.amount: Decimal = transaction.amount
+            self.amount: int = 0
             self.institution_id: str = account.institution.number  # The partition key in dynamo.
             self.memo: str = transaction.memo
             self.sic: str = transaction.sic
             self.mcc: str = transaction.mcc
             self.checknum: str = transaction.checknum
-            self.category: str = None
+            self.category_id: int = None
+            self.transaction_amount: Decimal = transaction.amount
 
     @staticmethod
     def from_dict(**kwargs):
@@ -37,7 +38,9 @@ class Transaction:
         transaction.sic = kwargs['sic']
         transaction.mcc = kwargs['mcc']
         transaction.checknum = kwargs['checknum']
-        transaction.category = kwargs.get('category', None)
+        transaction.category_id = kwargs.get('category_id', None)
+        transaction.transaction_category_id = kwargs.get('transaction_category_id', None)
+        transaction.transaction_amount = kwargs.get('transaction_amount', None)
 
         return transaction
 
@@ -59,7 +62,7 @@ class Transaction:
 class TransactionCategory:
 
     def __init__(self, **kwargs):
-        self.id = kwargs['transaction_category_id']
+        self.id = kwargs.get('id', None)
         self.category_id = kwargs['category_id']
         self.transaction_internal_id = kwargs['transaction_internal_id']
         self.amount = kwargs['amount']
@@ -68,7 +71,8 @@ class TransactionCategory:
         return (
             self.category_id,
             self.transaction_internal_id,
-            self.amount
+            self.amount,
+            self.id
         )
 
 

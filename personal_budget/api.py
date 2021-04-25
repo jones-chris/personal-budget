@@ -2,7 +2,7 @@ import datetime
 import logging
 from decimal import Decimal
 from itertools import groupby
-from typing import List, Union
+from typing import List, Union, Dict
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -46,48 +46,77 @@ def get_transactions() -> tuple:
     }, 200
 
 
-@app.route('/transactions/category', methods=['POST'])
-def update_transaction_category() -> Union[int, tuple]:
+@app.route('/transaction/category', methods=['POST'])
+def create_transaction_categories() -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[TransactionCategory] = [TransactionCategory(**transaction_category) for transaction_category in request_body]
 
-    transaction_categories_grouped_by_internal_id = groupby(
-        transaction_categories,
-        lambda transaction: transaction.internal_id
-    )
+    transaction_categories_grouped_by_internal_id: Dict[str, List[TransactionCategory]] = _group_transaction_categories_by_internal_id(transaction_categories)
 
-    for internal_id, transaction_categories in transaction_categories_grouped_by_internal_id:
+    for transaction_internal_id in transaction_categories_grouped_by_internal_id.keys():
         # Check that the total amount matches the transaction amount.
-        transaction: Transaction = Dao.get_transaction(internal_id, DB_FILE_PATH)
+        transaction: Transaction = Dao.get_transaction(transaction_internal_id, DB_FILE_PATH)
+        transaction_categories: List[TransactionCategory] = transaction_categories_grouped_by_internal_id[transaction_internal_id]
         transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
         if transaction.amount != transaction_category_amount_total:
             return {
-                'message': 'The sum of the transaction categories must equal the transaction amount'
+                'message': f'The sum of the transaction categories, {transaction_category_amount_total}, must equal the transaction amount, {transaction.amount}'
             }, 400
 
         for transaction_category in transaction_categories:
             Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
 
-    return 201
+    return {}, 200
+
+
+@app.route('/transaction/category', methods=['PUT'])
+def update_category_transaction() -> tuple:
+    request_body: List[dict] = request.get_json()
+    transaction_category: TransactionCategory = TransactionCategory(**request_body)
+
+    Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+
+    return {}, 200
 
 
 @app.route('/category', methods=['POST', 'PUT'])
-def update_category() -> int:
+def update_category() -> tuple:
     request_body: dict = request.get_json()
     try:
         category: Category = Category(**request_body)
     except KeyError:
-        return 400
+        return {}, 400
 
     Dao.save_category(category, DB_FILE_PATH)
 
-    return 201
+    return {}, 201
 
 
 @app.route('/categories', methods=['GET'])
 def get_categories() -> tuple:
     categories: List[Category] = Dao.get_categories(DB_FILE_PATH)
-    return jsonify(categories)
+    return jsonify([category.__dict__ for category in categories])
+
+
+@app.route('/category', methods=['DELETE'])
+def delete_category() -> tuple:
+    request_body: dict = request.get_json()
+    category_id = request_body['id']
+
+    Dao.delete_category(category_id, DB_FILE_PATH)
+
+    return {}, 200
+
+
+def _group_transaction_categories_by_internal_id(transaction_categories: List[TransactionCategory]) -> Dict[str, List[TransactionCategory]]:
+    grouped_transaction_categories: Dict[str, List[TransactionCategory]] = {}
+    for transaction_category in transaction_categories:
+        if transaction_category.transaction_internal_id in grouped_transaction_categories.keys():
+            grouped_transaction_categories[transaction_category.transaction_internal_id].append(transaction_category)
+        else:
+            grouped_transaction_categories[transaction_category.transaction_internal_id] = [transaction_category]
+
+    return grouped_transaction_categories
 
 
 if __name__ == '__main__':

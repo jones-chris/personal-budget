@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Table from 'react-bootstrap/Table';
+import Button from "react-bootstrap/Button";
 
 
 class Transaction extends Component {
@@ -97,9 +98,44 @@ class Transaction extends Component {
 		 })
 	}
 
+	onUpdateCategory = async (transactionInternalId, categoryId, amount, transactionCategoryId) => {
+		// Don't do anything if categoryId is null, undefined, or empty string.
+		if (categoryId === undefined || categoryId === null || categoryId === '') {
+			return;
+		}
+
+		const response = await fetch(
+			'http://localhost:5000/transaction/category',
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(
+					{
+						id: transactionCategoryId, 
+						category_id: categoryId,
+						transaction_internal_id: transactionInternalId,
+						amount: amount
+					}
+				)
+			}
+		)
+
+		if (response.status === 200) {
+			this.getTransactions();
+		} else {
+			let responseJson = response.json();
+			
+			console.log(responseJson);
+
+			alert('There was an error updating the transaction category');
+		}
+	}
+
 	render() {
-		if (!this.props.hidden) {
-			if (!this.state.initialized) {
+		if (! this.props.hidden) {
+			if (! this.state.initialized) {
 				this.getTransactions();
 				this.getCategories();
 				
@@ -114,12 +150,15 @@ class Transaction extends Component {
 			let categoriesJsx = [];
 			this.state.categories.forEach(category => {
 				categoriesJsx.push(
-					<option value={category} selected={transaction.category === category}>{category}</option>
+					<option value={category.id} selected={transaction.category_id === category.id}>{category.name}</option>
 				)
 			});
 
 
 			// Create transaction row using categories options JSX.
+			const transactionInternalId = transaction.internal_id;
+			const transactionAmount = transaction.amount;
+			const transactionCategoryId = transaction.transaction_category_id;
 			transactionsJsx.push(
 				<tr key={transaction.internal_id}>
 					<td hidden>{transaction.internal_id}</td>
@@ -128,7 +167,7 @@ class Transaction extends Component {
 					<td>{transaction.amount}</td>
 					<td>{transaction.institution_id}</td>
 					<td>
-						<select>
+						<select onChange={(event) => this.onUpdateCategory(transactionInternalId, event.target.value, transactionAmount, transactionCategoryId)}>
 							<option value=""></option>
 							{categoriesJsx}
 						</select>
@@ -138,6 +177,13 @@ class Transaction extends Component {
 					<td>{transaction.sic}</td>
 					<td>{transaction.mcc}</td>
 					<td>{transaction.type}</td>
+					<td>
+						<Button variant="outline-secondary"
+								onClick={() => this.props.showSplitTransactionModalFunc(transactionInternalId)}
+						>
+							Split
+						</Button>
+					</td>
 				</tr>
 			);
 		});
@@ -158,6 +204,7 @@ class Transaction extends Component {
 					      <th>Sic</th>
 					      <th>Mcc</th>
 					      <th>Type</th>
+					      <th>Actions</th>
 					    </tr>
 					  </thead>
 					  <tbody>
