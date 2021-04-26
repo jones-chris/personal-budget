@@ -24,17 +24,19 @@ class App extends Component {
           },
           splitTransactionModal: {
             hidden: true,
-            transactionInternalId: null
+            transactionId: null,
+            transactionCategoryId: null
           }
         }
 
         this.showSplitTransactionModal = this.showSplitTransactionModal.bind(this);
     }
 
-    showSplitTransactionModal = (transactionInternalId) => {
+    showSplitTransactionModal = (transactionId, transactionCategoryId) => {
       let newState = {...this.state};
       newState.splitTransactionModal.hidden = false;
-      newState.splitTransactionModal.transactionInternalId = transactionInternalId;
+      newState.splitTransactionModal.transactionId = transactionId;
+      newState.splitTransactionModal.transactionCategoryId = transactionCategoryId;
 
       newState.transactions.hidden = true;
 
@@ -49,14 +51,15 @@ class App extends Component {
           />
 
           <Transaction hidden={this.state.transactions.hidden}
-                       showSplitTransactionModalFunc={(transactionInternalId) => this.showSplitTransactionModal(transactionInternalId)}
+                       showSplitTransactionModalFunc={(transactionId, transactionCategoryId) => this.showSplitTransactionModal(transactionId, transactionCategoryId)}
           />
 
           <Category hidden={this.state.categories.hidden}
           />
 
           <SplitTransactionModal hidden={this.state.splitTransactionModal.hidden}
-                                 transactionInternalId={this.state.splitTransactionModal.transactionInternalId}
+                                 transactionId={this.state.splitTransactionModal.transactionId}
+                                 transactionCategoryId={this.state.splitTransactionModal.transactionCategoryId}
           />
         </div>
       );

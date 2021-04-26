@@ -98,26 +98,28 @@ class Transaction extends Component {
 		 })
 	}
 
-	onUpdateCategory = async (transactionInternalId, categoryId, amount, transactionCategoryId) => {
+	onUpdateCategory = async (transactionId, categoryId, amount, transactionCategoryId) => {
 		// Don't do anything if categoryId is null, undefined, or empty string.
 		if (categoryId === undefined || categoryId === null || categoryId === '') {
 			return;
 		}
 
 		const response = await fetch(
-			'http://localhost:5000/transaction/category',
+			`http://localhost:5000/transaction/category/${transactionCategoryId}`,
 			{
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify(
-					{
-						id: transactionCategoryId, 
-						category_id: categoryId,
-						transaction_internal_id: transactionInternalId,
-						amount: amount
-					}
+					[
+						{
+							id: transactionCategoryId, 
+							category_id: categoryId,
+							transaction_id: transactionId,
+							amount: amount
+						}
+					]
 				)
 			}
 		)
@@ -156,18 +158,18 @@ class Transaction extends Component {
 
 
 			// Create transaction row using categories options JSX.
-			const transactionInternalId = transaction.internal_id;
-			const transactionAmount = transaction.amount;
+			const transactionId = transaction.id;
+			const transactionAmount = (transaction.amount) ? transaction.amount : transaction.transaction_amount;
 			const transactionCategoryId = transaction.transaction_category_id;
 			transactionsJsx.push(
-				<tr key={transaction.internal_id}>
-					<td hidden>{transaction.internal_id}</td>
+				<tr key={transaction.id}>
+					<td hidden>{transaction.id}</td>
 					<td>{transaction.date}</td>
 					<td>{transaction.payee}</td>
-					<td>{transaction.amount}</td>
+					<td>{transactionAmount}</td>
 					<td>{transaction.institution_id}</td>
 					<td>
-						<select onChange={(event) => this.onUpdateCategory(transactionInternalId, event.target.value, transactionAmount, transactionCategoryId)}>
+						<select onChange={(event) => this.onUpdateCategory(transactionId, event.target.value, transactionAmount, transactionCategoryId)}>
 							<option value=""></option>
 							{categoriesJsx}
 						</select>
@@ -179,7 +181,7 @@ class Transaction extends Component {
 					<td>{transaction.type}</td>
 					<td>
 						<Button variant="outline-secondary"
-								onClick={() => this.props.showSplitTransactionModalFunc(transactionInternalId)}
+								onClick={() => this.props.showSplitTransactionModalFunc(transactionId, transactionCategoryId)}
 						>
 							Split
 						</Button>
@@ -193,7 +195,7 @@ class Transaction extends Component {
 				<Table striped bordered hover>
 					<thead>
 					    <tr>
-					      <th hidden>Internal ID</th>
+					      <th hidden>ID</th>
 					      <th>Date</th>
 					      <th>Payee</th>
 					      <th>Amount</th>

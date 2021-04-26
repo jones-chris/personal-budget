@@ -11,7 +11,8 @@ class SplitTransactionModal extends Component {
 
 		this.state = {
 			initialized: false,
-			transactionInternalId: null,
+			transactionId: null,
+			transactionCategoryId: null,
 			transactionCategories: [
 				{
 					id: 0,
@@ -23,14 +24,6 @@ class SplitTransactionModal extends Component {
 		};
 	}
 
-	// setTransactionInternalId = () => {
-	// 	let newState = {...this.state};
-		
-	// 	newState.transactionInternalId = this.props.transactionInternalId;
-
-	// 	this.setState(newState);
-	// }
-
 	getCategories = () => {
 		fetch(
             'http://localhost:5000/categories'
@@ -38,7 +31,8 @@ class SplitTransactionModal extends Component {
 		 .then(responseJson => {
 			let newState = {...this.state};
 			newState.categories = responseJson;
-			newState.transactionInternalId = this.props.transactionInternalId;
+			newState.transactionId = this.props.transactionId;
+			newState.transactionCategoryId = this.props.transactionCategoryId;
 			this.setState(newState);
 		 })
 	}
@@ -47,7 +41,6 @@ class SplitTransactionModal extends Component {
 		let newState = {...this.state};
 		newState.transactionCategories.push({
 			id: this.state.transactionCategories.length,
-			transactionInternalId: this.props.transactionInternalId,
 			categoryId: null,
 			amount: null
 		})
@@ -73,7 +66,6 @@ class SplitTransactionModal extends Component {
 		let newState = {...this.state};
 
 		let transactionCategoryToUpdate = newState.transactionCategories.filter(transactionCategory => transactionCategory.id === id)[0];
-		// transactionCategoryToUpdate.amount = parseInt(amount);
 		transactionCategoryToUpdate.amount = amount;
 
 		this.setState(newState);
@@ -109,17 +101,28 @@ class SplitTransactionModal extends Component {
 		// Transform the transction categories into the API's expected format.
 		let requestTransactionCategories = this.state.transactionCategories.map(transactionCategory => {
 			return {
+				id: this.state.transactionCategoryId,
 				category_id: transactionCategory.categoryId,
-				transaction_internal_id: this.state.transactionInternalId,
+				transaction_id: this.state.transactionId,
 				amount: parseInt(transactionCategory.amount)
 			}
 		});
 
 		// Save all transaction categories.
+		let httpMethod;
+		let uri;
+		if (this.state.transactionId && ! this.state.transactionCategoryId) {
+			httpMethod = 'POST';
+			uri = 'http://localhost:5000/transaction/category';
+		} else {
+			httpMethod = 'PUT';
+			uri = `http://localhost:5000/transaction/category/${this.state.transactionCategoryId}`;
+		}
+
 		const response = await fetch(
-			'http://localhost:5000/transaction/category',
+			uri,
 			{
-				method: 'POST',
+				method: httpMethod,
 				headers: {
 					'Content-Type': 'application/json'
 				},
@@ -141,7 +144,6 @@ class SplitTransactionModal extends Component {
 	render() {
 		if (! this.props.hidden) {
 			if (! this.state.initialized) {
-				// this.setTransactionInternalId();
 				this.getCategories();
 				let newState = {...this.state, initialized: true}
 				this.setState(newState);

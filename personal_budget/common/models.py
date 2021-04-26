@@ -11,7 +11,7 @@ class Transaction:
     """
     def __init__(self, transaction: ofxparse.Transaction = None, account: ofxclient.Account = None) -> None:
         if transaction and account:
-            self.internal_id: str = f'{account.institution.org}.{account.number}.{transaction.id}'
+            self.id: int = None
             self.payee: str = transaction.payee
             self.type: str = transaction.type
             self.date: date = transaction.date  # The sort key in dynamo.
@@ -28,7 +28,7 @@ class Transaction:
     def from_dict(**kwargs):
         transaction = Transaction()
 
-        transaction.internal_id = kwargs['internal_id']
+        transaction.id = kwargs.get('id', None)
         transaction.payee = kwargs['payee']
         transaction.type = kwargs['type']
         transaction.date = kwargs['date']
@@ -46,7 +46,7 @@ class Transaction:
 
     def to_tuple(self):
         return (
-            self.internal_id,
+            self.id,
             self.payee,
             self.type,
             self.date.strftime('%Y-%m-%d'),
@@ -64,13 +64,13 @@ class TransactionCategory:
     def __init__(self, **kwargs):
         self.id = kwargs.get('id', None)
         self.category_id = kwargs['category_id']
-        self.transaction_internal_id = kwargs['transaction_internal_id']
+        self.transaction_id = kwargs['transaction_id']
         self.amount = kwargs['amount']
 
     def to_tuple(self):
         return (
             self.category_id,
-            self.transaction_internal_id,
+            self.transaction_id,
             self.amount,
             self.id
         )

@@ -3,7 +3,7 @@ import logging
 import os
 from common.config import get_config
 from personal_budget.common.dao import Dao
-from personal_budget.common.models import Transaction
+from personal_budget.common.models import Transaction, TransactionCategory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -11,28 +11,6 @@ logger.addHandler(logging.StreamHandler())
 
 
 def main() -> None:
-    # # Get configuration file.
-    # config_file_path = sys.argv[1]
-    # if not os.path.exists(config_file_path):
-    #     logger.error('{config_file_path} does not exist')
-    #     exit(1)
-    #
-    # root, extension = os.path.splitext(config_file_path)
-    # if extension.lower() != '.json':
-    #     logger.error('{config_file_path} must be have a .json extension.  For example, /path/to/my_config.json')
-    #
-    # config = {}
-    # with open(config_file_path) as config_file:
-    #     config = json.load(config_file)
-    #
-    # # Get number of days of transactions to retrieve.
-    # transaction_directory: str = config['transaction_directory']
-    # sqlite_db_file_path: str = config['sqlite_db_file_path']
-    #
-    # if not os.path.exists(transaction_directory):
-    #     logger.error(f'{transaction_directory} does not exist')
-    #     exit(1)
-
     config: dict = get_config()
     DB_FILE_PATH: str = config['sqlite_db_file_path']
 
@@ -49,12 +27,8 @@ def main() -> None:
                     ])
 
                 for row in reader:
-                    internal_id: str = f"{row['date']}-{row['description']}-{row['amount']}"
-                    date: date = row['date']
-
                     transaction: Transaction = Transaction.from_dict(
                         **{
-                            'internal_id': internal_id,
                             'payee': row['description'],
                             'type': None,
                             'date': row['date'],
@@ -63,33 +37,22 @@ def main() -> None:
                             'memo': None,
                             'sic': None,
                             'mcc': None,
-                            'checknum': None
+                            'checknum': None,
+                            'category_id': 1  # Default to the Uncategorized category.
                         }
                     )
 
-                    Dao.save_transaction(transaction, DB_FILE_PATH)
+                    generated_id: int = Dao.save_transaction(transaction, DB_FILE_PATH)
 
-            #         # Query the database to find out if a record with this internal_id exists already.
-            #         cursor.execute('SELECT count(*) FROM transactions WHERE internal_id = ?',
-            #                        (internal_id,))
-            #
-            #         # If a record with the internal_id already exists, UPDATE it.  Otherwise, INSERT a new record.
-            #         results_record = cursor.fetchone()
-            #         if results_record[0] == 0:
-            #             cursor.execute(
-            #                 'INSERT INTO transactions (internal_id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
-            #                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            #                 (internal_id, description, None, date, amount, 'USAA', None, None, None, None,)
-            #             )
-            #         else:
-            #             cursor.execute(
-            #                 'UPDATE transactions '
-            #                 '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ? '
-            #                 '    WHERE internal_id = ?',
-            #                 (description, None, date, amount, 'USAA', None, None, None, None, internal_id,)
-            #             )
-            #
-            # db_connection.commit()
+                    transaction_category: TransactionCategory = TransactionCategory(
+                        **{
+                            'category_id': 1,
+                            'transaction_id': generated_id,
+                            'amount': transaction.amount
+                        }
+                    )
+
+                    Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ class Dao:
 
         db_results = cursor.execute(
             '''
-            SELECT t.internal_id, 
+            SELECT t.id, 
                    t.payee, 
                    t.type, 
                    tc.amount,
@@ -28,7 +28,7 @@ class Dao:
                    t.amount AS total_amount
             FROM transactions t 
             LEFT JOIN transaction_categories tc 
-              ON t.internal_id = tc.transaction_internal_id 
+              ON t.id = tc.transaction_id 
             LEFT JOIN category c 
               ON tc.category_id = c.id 
             WHERE t.date BETWEEN ? and ? 
@@ -42,7 +42,7 @@ class Dao:
             transactions.append(
                 Transaction.from_dict(
                     **{
-                        'internal_id': row[0],
+                        'id': row[0],
                         'payee': row[1],
                         'type': row[2],
                         'amount': row[3],
@@ -62,13 +62,13 @@ class Dao:
         return transactions
 
     @staticmethod
-    def get_transaction(internal_id: str, db_file_path: str) -> Transaction:
+    def get_transaction(id: str, db_file_path: str) -> Transaction:
         db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
 
         db_result = cursor.execute(
             '''
-            SELECT t.internal_id, 
+            SELECT t.id, 
                    t.payee, 
                    t.type, 
                    tc.amount,
@@ -83,18 +83,18 @@ class Dao:
                    t.amount AS total_amount
             FROM transactions t 
             LEFT JOIN transaction_categories tc 
-              ON t.internal_id = tc.transaction_internal_id 
+              ON t.id = tc.transaction_id 
             LEFT JOIN category c 
               ON tc.category_id = c.id 
-            WHERE t.internal_id = ?
+            WHERE t.id = ?
             ORDER BY t.date DESC
             ''',
-            (internal_id,)
+            (id,)
         ).fetchone()
 
         return Transaction.from_dict(
             **{
-                'internal_id': db_result[0],
+                'id': db_result[0],
                 'payee': db_result[1],
                 'type': db_result[2],
                 'amount': db_result[3],
@@ -110,67 +110,110 @@ class Dao:
         )
 
     @staticmethod
-    def save_transaction(transaction: Transaction, db_file_path: str) -> None:
+    def save_transaction(transaction: Transaction, db_file_path: str) -> int:
         db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
 
-        # Query the database to find out if a record with this internal_id exists already.
+        # Query the database to find out if a record with this id exists already.
         cursor.execute(
-            'SELECT count(*) FROM transactions WHERE internal_id = ?',
-            (transaction.internal_id,)
+            'SELECT count(*) FROM transactions WHERE id = ?',
+            (transaction.id,)
         )
 
-        # If a record with the internal_id already exists, UPDATE it.  Otherwise, INSERT a new record.
+        # If a record with the id already exists, UPDATE it.  Otherwise, INSERT a new record.
         db_result = cursor.fetchone()
         if db_result[0] == 0:
             cursor.execute(
-                'INSERT INTO transactions (internal_id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
+                'INSERT INTO transactions (id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
                 ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (transaction.internal_id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None,
+                (transaction.id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None,
                  None, None, None,)
             )
         else:
             cursor.execute(
                 'UPDATE transactions '
                 '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ? '
-                '    WHERE internal_id = ?',
+                '    WHERE id = ?',
                 (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None,
-                 transaction.internal_id,)
+                 transaction.id,)
             )
 
         db_connection.commit()
+
+        last_rowid: int = cursor.execute(
+            'SELECT last_insert_rowid()'
+        ).fetchone()
+
+        return last_rowid[0]
 
     @staticmethod
     def save_transaction_category(transaction_category: TransactionCategory, db_file_path: str) -> None:
         db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
 
-        # cursor.execute(
-        #     'SELECT count(*) FROM transaction_categories WHERE transaction_internal_id = ?',
-        #     (transaction_category.transaction_internal_id,)
-        # )
-        # db_result = cursor.fetchone()
-        #
-        # # Turn foreign keys on in SQLite database.
+        # Turn foreign keys on in SQLite database.
         cursor.execute('PRAGMA foreign_keys = ON')
 
-        # If the transaction category already exists, then update it.  Otherwise, insert a new record.
-        if transaction_category.id:
-            cursor.execute(
-                'UPDATE transaction_categories '
-                'SET category_id = ?, '
-                '    amount = ? '
-                'WHERE id = ?',
-                (transaction_category.category_id, transaction_category.amount, transaction_category.id,)
-            )
-        else:
-            cursor.execute(
-                'INSERT INTO transaction_categories (category_id, transaction_internal_id, amount) VALUES (?, ?, ?)',
-                (transaction_category.category_id, transaction_category.transaction_internal_id,
-                 transaction_category.amount,)
-            )
+        cursor.execute(
+            'INSERT INTO transaction_categories (category_id, transaction_id, amount) VALUES (?, ?, ?)',
+            (transaction_category.category_id, transaction_category.transaction_id,
+             transaction_category.amount,)
+        )
 
         db_connection.commit()
+
+    # @staticmethod
+    # def update_transaction_category(transaction_category: TransactionCategory, db_file_path: str) -> None:
+    #     db_connection = sqlite3.connect(db_file_path)
+    #     cursor = db_connection.cursor()
+    #
+    #     # Turn foreign keys on in SQLite database.
+    #     cursor.execute('PRAGMA foreign_keys = ON')
+    #
+    #     cursor.execute(
+    #         'UPDATE transaction_categories '
+    #         'SET category_id = ?, '
+    #         '    amount = ? '
+    #         'WHERE id = ?',
+    #         (transaction_category.category_id, transaction_category.amount, transaction_category.id,)
+    #     )
+    #
+    #     db_connection.commit()
+
+    @staticmethod
+    def delete_transaction_category(id: int, db_file_path: str) -> None:
+        db_connection = sqlite3.connect(db_file_path)
+        cursor = db_connection.cursor()
+
+        # Turn foreign keys on in SQLite database.
+        cursor.execute('PRAGMA foreign_keys = ON')
+
+        cursor.execute(
+            '''
+            DELETE 
+            FROM transaction_categories
+            WHERE id = ?
+            ''',
+            (id,)
+        )
+
+        db_connection.commit()
+
+    @staticmethod
+    def get_transaction_category_amount(transaction_category_id: int, db_file_path: str) -> int:
+        db_connection = sqlite3.connect(db_file_path)
+        cursor = db_connection.cursor()
+
+        db_result = cursor.execute(
+            '''
+            SELECT SUM(amount)
+            FROM transaction_categories
+            WHERE id = ?
+            ''',
+            (transaction_category_id,)
+        ).fetchone()
+
+        return db_result[0]
 
     @staticmethod
     def save_category(category: Category, db_file_path: str) -> None:
