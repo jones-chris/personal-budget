@@ -1,13 +1,14 @@
 import datetime
 import logging
 from decimal import Decimal
-from typing import List, Union, Dict
+from typing import List, Union, Dict, AnyStr, Tuple
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from common.config import get_config
 from common.dao import Dao
+from personal_budget.budget_report import BudgetReport
 from personal_budget.common.models import Transaction, TransactionCategory, Category
 
 app = Flask(__name__)
@@ -27,14 +28,14 @@ def get_transactions() -> tuple:
     end_date = request.args.get('endDate')
 
     if start_date:
-        start_date = datetime.datetime.strptime(start_date, '%m/%d/%Y').date()
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
     else:
         return {
             'message': 'startDate query parameter is null'
         }, 400
 
     if end_date:
-        end_date = datetime.datetime.strptime(end_date, '%m/%d/%Y').date()
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
     else:
         end_date = datetime.date.today()
 
@@ -120,6 +121,13 @@ def delete_category() -> tuple:
     Dao.delete_category(category_id, DB_FILE_PATH)
 
     return {}, 200
+
+
+@app.route('/report/<report_name>', methods=['GET'])
+def get_report(report_name: str) -> Tuple[AnyStr, int]:
+    month = request.args.get('month')  # todo:  pass this into method below.
+    report_stream: AnyStr = BudgetReport().to_stream()
+    return report_stream, 200
 
 
 def _group_transaction_categories_by_id(transaction_categories: List[TransactionCategory]) -> Dict[str, List[TransactionCategory]]:

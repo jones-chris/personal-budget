@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Table from 'react-bootstrap/Table';
 import Button from "react-bootstrap/Button";
+import './Transaction.css';
 
 
 class Transaction extends Component {
@@ -34,7 +35,7 @@ class Transaction extends Component {
 
 		let year = today.getFullYear();
 
-		return `${month}/${day}/${year}`;
+		return `${year}-${month}-${day}`;
 	}
 
 	/**
@@ -59,7 +60,7 @@ class Transaction extends Component {
 
 		let year = today.getFullYear();
 
-		return `${month}/${day}/${year}`;
+		return `${year}-${month}-${day}`;
 	}
 
 	getTransactions = () => {
@@ -162,7 +163,7 @@ class Transaction extends Component {
 			const transactionAmount = (transaction.amount) ? transaction.amount : transaction.transaction_amount;
 			const transactionCategoryId = transaction.transaction_category_id;
 			transactionsJsx.push(
-				<tr key={transaction.id}>
+				<tr key={transaction.id + '-' + transaction.transaction_category_id}>
 					<td hidden>{transaction.id}</td>
 					<td>{transaction.date}</td>
 					<td>{transaction.payee}</td>
@@ -192,6 +193,36 @@ class Transaction extends Component {
 
 		return (
 			<div hidden={this.props.hidden.toString() === 'true'}>
+				<span>
+					<label for="fromDate"
+					>
+						From
+					</label>
+					<input type="date" 
+						   id="fromDate"
+						   onChange={(event) => this.setState({...this.state, startDate: event.target.value})}
+				    >
+				    </input>
+
+					<label for="toDate" 
+					       className="dates-item"
+			        >
+			        	To
+			        </label>
+					<input type="date" 
+						   id="toDate"
+						   onChange={(event) => this.setState({...this.state, endDate: event.target.value})}
+				    >
+				    </input>
+
+					<Button variant="outline-primary"
+					        className="dates-item"
+							onClick={this.getTransactions}
+					>
+						Search
+					</Button>
+				</span>
+
 				<Table striped bordered hover>
 					<thead>
 					    <tr>
