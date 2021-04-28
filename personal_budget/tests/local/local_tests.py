@@ -7,5 +7,5 @@ if __name__ == '__main__':
     os.environ['TRANSACTIONS_DYNAMO_TABLE_NAME'] = 'personal-budget-transactions'
     os.environ['NUM_OF_TRANSACTION_DAYS'] = '1'
 
-    from personal_budget import main
-    main.lambda_handler({}, [])
+    from personal_budget import ofx_import
+    ofx_import.lambda_handler({}, [])
