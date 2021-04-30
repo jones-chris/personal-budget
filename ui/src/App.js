@@ -5,6 +5,7 @@ import React, { Component } from "react";
 import Transaction from "./Transaction/Transaction";
 import Category from "./Category/Category";
 import SplitTransactionModal from "./Modal/SplitTransactionModal";
+import Reports from "./Reports/Reports";
 
 
 class App extends Component {
@@ -26,10 +27,14 @@ class App extends Component {
             hidden: true,
             transactionId: null,
             transactionCategoryId: null
+          },
+          reports: {
+            hidden: true
           }
         }
 
         this.showSplitTransactionModal = this.showSplitTransactionModal.bind(this);
+        this.hideSplitTransactionModal = this.hideSplitTransactionModal.bind(this);
     }
 
     showSplitTransactionModal = (transactionId, transactionCategoryId) => {
@@ -39,6 +44,17 @@ class App extends Component {
       newState.splitTransactionModal.transactionCategoryId = transactionCategoryId;
 
       newState.transactions.hidden = true;
+
+      this.setState(newState);
+    }
+
+    hideSplitTransactionModal = () => {
+      let newState = {...this.state};
+      newState.splitTransactionModal.hidden = true;
+      newState.splitTransactionModal.transactionId = null;
+      newState.splitTransactionModal.transactionCategoryId = null;
+
+      newState.transactions.hidden = false;
 
       this.setState(newState);
     }
@@ -60,6 +76,10 @@ class App extends Component {
           <SplitTransactionModal hidden={this.state.splitTransactionModal.hidden}
                                  transactionId={this.state.splitTransactionModal.transactionId}
                                  transactionCategoryId={this.state.splitTransactionModal.transactionCategoryId}
+                                 onCloseModalHandler={this.hideSplitTransactionModal}
+          />
+
+          <Reports hidden={this.state.reports.hidden}
           />
         </div>
       );

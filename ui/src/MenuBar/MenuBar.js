@@ -13,6 +13,7 @@ class MenuBar extends Component {
 		newState.home.hidden = true;
 		newState.categories.hidden = true;
 		newState.transactions.hidden = false;
+		newState.reports.hidden = true;
 
 		this.props.setStateFunc(newState);
 	}
@@ -22,6 +23,17 @@ class MenuBar extends Component {
 		newState.home.hidden = true;
 		newState.categories.hidden = false;
 		newState.transactions.hidden = true;
+		newState.reports.hidden = true;
+
+		this.props.setStateFunc(newState);
+	}
+
+	onShowReportsSection = () => {
+		let newState = {...this.props.state};
+		newState.home.hidden = true;
+		newState.categories.hidden = true;
+		newState.transactions.hidden = true;
+		newState.reports.hidden = false;
 
 		this.props.setStateFunc(newState);
 	}
@@ -43,6 +55,12 @@ class MenuBar extends Component {
 	                                  onClick={this.onShowCategorySection}
 	                        >
 	                            Categories
+	                        </Nav.Link>
+
+	                        <Nav.Link className={this.props.state.reports.hidden ? "nav-item": "nav-item active"}
+	                                  onClick={this.onShowReportsSection}
+	                        >
+	                            Reports
 	                        </Nav.Link>
 	                    </Nav>
 
