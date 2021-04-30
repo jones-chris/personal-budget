@@ -3,12 +3,14 @@ import logging
 from decimal import Decimal
 from typing import List, Union, Dict, AnyStr, Tuple
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 
 from common.config import get_config
 from common.dao import Dao
-from personal_budget.budget_report import BudgetReport
+from personal_budget.budget_report import ReportGenerator
 from personal_budget.common.models import Transaction, TransactionCategory, Category
 
 app = Flask(__name__)
@@ -124,10 +126,30 @@ def delete_category() -> tuple:
 
 
 @app.route('/report/<report_name>', methods=['GET'])
-def get_report(report_name: str) -> Tuple[AnyStr, int]:
-    month = request.args.get('month')  # todo:  pass this into method below.
-    report_stream: AnyStr = BudgetReport().to_stream()
-    return report_stream, 200
+def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, str], int]]:
+    start_date = request.args.get('startDate')
+    end_date = request.args.get('endDate')
+
+    if start_date:
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+    else:
+        return {
+            'message': 'startDate query parameter is null'
+        }, 400
+
+    if end_date:
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+    else:
+        end_date = datetime.date.today()
+
+    report_temp_file: AnyStr = ReportGenerator().to_stream(start_date, end_date)
+    return Response(
+        report_temp_file,
+        headers={
+            'Content-Disposition': 'attachment; filename=sheet.xlsx',
+            'Content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+    )
 
 
 def _group_transaction_categories_by_id(transaction_categories: List[TransactionCategory]) -> Dict[str, List[TransactionCategory]]:

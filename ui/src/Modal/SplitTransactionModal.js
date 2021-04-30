@@ -193,7 +193,7 @@ class SplitTransactionModal extends Component {
 		});
 
 		return (
-			<Modal show={! this.props.hidden} backdrop='static' size="lg" onHide={this.props.onCloseHandler}>
+			<Modal show={! this.props.hidden} backdrop='static' size="lg" onHide={this.props.onCloseModalHandler}>
 				<Modal.Header closeButton>
 			        <Modal.Title>Split Transaction Categories</Modal.Title>
 			    </Modal.Header>
@@ -220,7 +220,7 @@ class SplitTransactionModal extends Component {
 			    </Modal.Body>
 
 			    <Modal.Footer>
-			    	<Button variant="outline-secondary" onClick={this.props.onCloseHandler}>
+			    	<Button variant="outline-secondary" onClick={this.props.onCloseModalHandler}>
 			        	Close
 			        </Button>
 			        <Button variant="outline-primary" onClick={this.onSave}>
