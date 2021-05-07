@@ -1,17 +1,18 @@
 import datetime
 import logging
 from decimal import Decimal
+from sqlite3 import Connection
 from typing import List, Union, Dict, AnyStr, Tuple
 
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-from openpyxl import Workbook
-from openpyxl.writer.excel import save_virtual_workbook
+
+from common.db_utils import manage_database_connection
+from report_generator import ReportGenerator
 
 from common.config import get_config
 from common.dao import Dao
-from personal_budget.budget_report import ReportGenerator
-from personal_budget.common.models import Transaction, TransactionCategory, Category
+from common.models import Transaction, TransactionCategory, Category
 
 app = Flask(__name__)
 CORS(app)
@@ -23,9 +24,13 @@ logger.addHandler(logging.StreamHandler())
 config: dict = get_config()
 DB_FILE_PATH: str = config['sqlite_db_file_path']
 
+# Note:
+# The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
+# https://izziswift.com/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-function-main/
 
-@app.route('/transactions', methods=['GET'])
-def get_transactions() -> tuple:
+@app.route('/transactions', methods=['GET'], endpoint='get_transactions')
+@manage_database_connection
+def get_transactions(db_connection: Connection) -> tuple:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
 
@@ -41,14 +46,15 @@ def get_transactions() -> tuple:
     else:
         end_date = datetime.date.today()
 
-    transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, DB_FILE_PATH)
+    transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, db_connection)
 
     return {
         'transactions': [transaction.__dict__ for transaction in transactions]
     }, 200
 
 
-@app.route('/transaction/category', methods=['POST'])
+@app.route('/transaction/category', methods=['POST'], endpoint='create_transaction_categories')
+@manage_database_connection
 def create_transaction_categories() -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[TransactionCategory] = [TransactionCategory(**transaction_category) for transaction_category in request_body]
@@ -71,7 +77,8 @@ def create_transaction_categories() -> Union[int, tuple]:
     return {}, 200
 
 
-@app.route('/transaction/category/<transaction_category_id>', methods=['PUT'])
+@app.route('/transaction/category/<transaction_category_id>', methods=['PUT'], endpoint='update_category_transaction')
+@manage_database_connection
 def update_category_transaction(transaction_category_id: int) -> tuple:
     request_body: dict = request.get_json()
 
@@ -96,7 +103,8 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
     return {}, 200
 
 
-@app.route('/category', methods=['POST', 'PUT'])
+@app.route('/category', methods=['POST', 'PUT'], endpoint='update_category')
+@manage_database_connection
 def update_category() -> tuple:
     request_body: dict = request.get_json()
     try:
@@ -109,13 +117,15 @@ def update_category() -> tuple:
     return {}, 201
 
 
-@app.route('/categories', methods=['GET'])
+@app.route('/categories', methods=['GET'], endpoint='get_categories')
+@manage_database_connection
 def get_categories() -> tuple:
     categories: List[Category] = Dao.get_categories(DB_FILE_PATH)
     return jsonify([category.__dict__ for category in categories])
 
 
-@app.route('/category', methods=['DELETE'])
+@app.route('/category', methods=['DELETE'], endpoint='delete_category')
+@manage_database_connection
 def delete_category() -> tuple:
     request_body: dict = request.get_json()
     category_id = request_body['id']
@@ -125,7 +135,8 @@ def delete_category() -> tuple:
     return {}, 200
 
 
-@app.route('/report/<report_name>', methods=['GET'])
+@app.route('/report/<report_name>', methods=['GET'], endpoint='get_report')
+@manage_database_connection
 def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, str], int]]:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
@@ -165,7 +176,7 @@ def _group_transaction_categories_by_id(transaction_categories: List[Transaction
 
 if __name__ == '__main__':
     app.run(
-        host='localhost',
+        host='0.0.0.0',
         port=5000,
         debug=True
     )

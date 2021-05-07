@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import date
+from sqlite3 import Connection
 from typing import List
 from common.models import Transaction, TransactionCategory, Category
 
@@ -7,8 +8,8 @@ from common.models import Transaction, TransactionCategory, Category
 class Dao:
 
     @staticmethod
-    def get_transactions(start_date: date, end_date: date, db_file_path: str) -> List[Transaction]:
-        db_connection = sqlite3.connect(db_file_path)
+    def get_transactions(start_date: date, end_date: date, db_connection: Connection) -> List[Transaction]:
+        # db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
 
         db_results = cursor.execute(
@@ -110,6 +111,19 @@ class Dao:
         )
 
     @staticmethod
+    def transaction_exists(internal_id: str, db_file_path: str) -> bool:
+        db_connection = sqlite3.connect(db_file_path)
+        cursor = db_connection.cursor()
+
+        # Query the database to find out if a record with this internal_id exists already.
+        db_result = cursor.execute(
+            'SELECT count(*) FROM transactions WHERE internal_id = ?',
+            (internal_id,)
+        ).fetchone()
+
+        return db_result[0] != 0
+
+    @staticmethod
     def save_transaction(transaction: Transaction, db_file_path: str) -> int:
         db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
@@ -124,17 +138,17 @@ class Dao:
         db_result = cursor.fetchone()
         if db_result[0] == 0:
             cursor.execute(
-                'INSERT INTO transactions (id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO transactions (id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum, internal_id)'
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (transaction.id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None,
-                 None, None, None,)
+                 None, None, None, transaction.internal_id,)
             )
         else:
             cursor.execute(
                 'UPDATE transactions '
-                '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ? '
+                '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ?, internal_id = ? '
                 '    WHERE id = ?',
-                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None,
+                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None, transaction.internal_id,
                  transaction.id,)
             )
 
@@ -261,6 +275,7 @@ class Dao:
             '''
             SELECT id, name
             FROM category
+            ORDER BY name ASC
             '''
         ).fetchall()
 

@@ -3,7 +3,7 @@ from typing import List, AnyStr
 from openpyxl import load_workbook, Workbook
 from common.config import get_config
 from common.dao import Dao
-from personal_budget.common.models import Transaction
+from common.models import Transaction
 from tempfile import NamedTemporaryFile
 
 

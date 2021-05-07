@@ -104,7 +104,7 @@ class SplitTransactionModal extends Component {
 				id: this.state.transactionCategoryId,
 				category_id: transactionCategory.categoryId,
 				transaction_id: this.state.transactionId,
-				amount: parseInt(transactionCategory.amount)
+				amount: parseFloat(transactionCategory.amount)
 			}
 		});
 

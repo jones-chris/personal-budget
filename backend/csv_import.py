@@ -1,9 +1,11 @@
 import csv
 import logging
 import os
+from typing import List
+
 from common.config import get_config
-from personal_budget.common.dao import Dao
-from personal_budget.common.models import Transaction, TransactionCategory
+from common.dao import Dao
+from common.models import Transaction, TransactionCategory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,12 +22,15 @@ def main() -> None:
     for file_name in os.listdir(transaction_directory):
         if file_name.endswith('.csv'):
             with open(f'{transaction_directory}/{file_name}') as file_contents:
+                # Get transactions csv file field names from config.
+                fieldnames: List[str] = config['import']['csv']['transactions']['headers']
+
                 reader = csv.DictReader(
                     file_contents,
-                    fieldnames=[
-                        'posted', 'blank1', 'date', 'blank2', 'description', 'category', 'amount'
-                    ])
+                    fieldnames=fieldnames
+                )
 
+                # Create a transaction for each row in the csv file.
                 for row in reader:
                     transaction: Transaction = Transaction.from_dict(
                         **{
@@ -42,17 +47,22 @@ def main() -> None:
                         }
                     )
 
-                    generated_id: int = Dao.save_transaction(transaction, DB_FILE_PATH)
+                    # Check if the transaction already exists in the database.
+                    transaction_exists: bool = Dao.transaction_exists(transaction.internal_id, DB_FILE_PATH)
 
-                    transaction_category: TransactionCategory = TransactionCategory(
-                        **{
-                            'category_id': 1,
-                            'transaction_id': generated_id,
-                            'amount': transaction.amount
-                        }
-                    )
+                    # If not, then save the transaction and one transaction category associated with it.
+                    if not transaction_exists:
+                        generated_id: int = Dao.save_transaction(transaction, DB_FILE_PATH)
 
-                    Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+                        transaction_category: TransactionCategory = TransactionCategory(
+                            **{
+                                'category_id': 1,
+                                'transaction_id': generated_id,
+                                'amount': transaction.amount
+                            }
+                        )
+
+                        Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
 
 
 if __name__ == '__main__':
