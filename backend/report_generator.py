@@ -1,4 +1,5 @@
 import datetime
+from sqlite3 import Connection
 from typing import List, AnyStr
 from openpyxl import load_workbook, Workbook
 from common.config import get_config
@@ -9,9 +10,10 @@ from tempfile import NamedTemporaryFile
 
 class ReportGenerator:
 
-    def __init__(self):
+    def __init__(self, db_connection: Connection):
         self.config: dict = get_config()
-        self.db_file_path = self.config['sqlite_db_file_path']
+        # self.db_file_path = self.config['sqlite_db_file_path']
+        self.db_connection: Connection = db_connection
         self.last_row_number = 10000
         self.transactions_data_range_address = f'$A$2:$J${self.last_row_number}'
 
@@ -40,7 +42,7 @@ class ReportGenerator:
         transactions_worksheet = [worksheet for worksheet in workbook.worksheets if worksheet.title == 'Transactions'][0]
         transactions_data_range = transactions_worksheet[self.transactions_data_range_address]
 
-        transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, self.db_file_path)
+        transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, self.db_connection)
 
         if len(transactions) >= self.last_row_number:
             raise ValueError(

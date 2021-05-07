@@ -1,30 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 
-# Run the API in the background.
-./run-backend -D
-status=$?
-if [ $status -ne 0 ]; then
-  echo "Failed to start the API: $status"
-  exit $status
+if [ "$APP" = "" ]; then
+  echo "APP is empty.  Set the APP environment variable using the -e option when starting the container."
+  exit 1
+elif [ "$APP" = "webapp" ]; then
+  echo "Running the web app (the API and UI)"
+  ./run-webapp.sh
+elif [ "$APP" = "api-only" ]; then
+  echo "Running the API only"
+  ./run-api.sh
+elif [ "$APP" = "ofx-import" ]; then
+  echo "Running the OFX import"
+  ./run-ofx-import.sh
+elif [ "$APP" = "csv-import" ]; then
+  echo "Running the CSV import"
+  ./run-csv-import.sh
+else
+  echo "$APP not recognized"
+  exit 1
 fi
 
-# Run the UI in the background.
-./run-ui -D
-status=$?
-if [ $status -ne 0 ]; then
-  echo "Failed to start the UI: $status"
-  exit $status
-fi
 
-while sleep 60; do
-  ps aux | grep run-backend | grep -q -v grep
-  API_STATUS=$?
-  ps aux | grep run-ui | grep -q -v grep
-  UI_STATUS=$?
-  # If the greps above find anything, they exit with 0 status
-  # If they are not both 0, then something is wrong
-  if [ $API_STATUS -ne 0 -o $UI_STATUS -ne 0 ]; then
-    echo "One of the processes has already exited."
-    exit 1
-  fi
-done

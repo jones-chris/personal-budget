@@ -1,14 +1,18 @@
+import functools
 import sqlite3
-
-from common.config import DB_FILE_PATH
-
+from common.config import get_config
 
 def manage_database_connection(target_func) -> ():
-    def wrapper():
-        db_connection = sqlite3.connect(DB_FILE_PATH)
+
+    config: dict = get_config()
+    db_file_path: str = config['sqlite_db_file_path']
+
+    @functools.wraps(target_func)
+    def wrapper(*args, **kwargs):
+        db_connection = sqlite3.connect(db_file_path)
 
         try:
-            response = target_func(db_connection)
+            response = target_func(db_connection, **kwargs)
 
             if db_connection.in_transaction:
                 db_connection.commit()

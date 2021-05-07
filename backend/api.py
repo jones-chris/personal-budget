@@ -28,6 +28,7 @@ DB_FILE_PATH: str = config['sqlite_db_file_path']
 # The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
 # https://izziswift.com/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-function-main/
 
+
 @app.route('/transactions', methods=['GET'], endpoint='get_transactions')
 @manage_database_connection
 def get_transactions(db_connection: Connection) -> tuple:
@@ -55,7 +56,7 @@ def get_transactions(db_connection: Connection) -> tuple:
 
 @app.route('/transaction/category', methods=['POST'], endpoint='create_transaction_categories')
 @manage_database_connection
-def create_transaction_categories() -> Union[int, tuple]:
+def create_transaction_categories(db_connection: Connection) -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[TransactionCategory] = [TransactionCategory(**transaction_category) for transaction_category in request_body]
 
@@ -63,7 +64,7 @@ def create_transaction_categories() -> Union[int, tuple]:
 
     for transaction_id in transaction_categories_grouped_by_id.keys():
         # Check that the total amount matches the transaction amount.
-        transaction: Transaction = Dao.get_transaction(transaction_id, DB_FILE_PATH)
+        transaction: Transaction = Dao.get_transaction(transaction_id, db_connection)
         transaction_categories: List[TransactionCategory] = transaction_categories_grouped_by_id[transaction_id]
         transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
         if transaction.amount != transaction_category_amount_total:
@@ -72,14 +73,14 @@ def create_transaction_categories() -> Union[int, tuple]:
             }, 400
 
         for transaction_category in transaction_categories:
-            Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+            Dao.save_transaction_category(transaction_category, db_connection)
 
     return {}, 200
 
 
 @app.route('/transaction/category/<transaction_category_id>', methods=['PUT'], endpoint='update_category_transaction')
 @manage_database_connection
-def update_category_transaction(transaction_category_id: int) -> tuple:
+def update_category_transaction(transaction_category_id: int, db_connection: Connection) -> tuple:
     request_body: dict = request.get_json()
 
     transaction_categories: List[TransactionCategory] = []
@@ -88,7 +89,7 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
             TransactionCategory(**dictionary)
         )
 
-    transaction_category_amount: int = Dao.get_transaction_category_amount(transaction_category_id, DB_FILE_PATH)
+    transaction_category_amount: int = Dao.get_transaction_category_amount(transaction_category_id, db_connection)
     transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
     if transaction_category_amount != transaction_category_amount_total:
         return {
@@ -96,48 +97,48 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
                               f'transaction category amount, {transaction_category_amount}'
                }, 400
 
-    Dao.delete_transaction_category(transaction_category_id, DB_FILE_PATH)
+    Dao.delete_transaction_category(transaction_category_id, db_connection)
     for transaction_category in transaction_categories:
-        Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+        Dao.save_transaction_category(transaction_category, db_connection)
 
     return {}, 200
 
 
 @app.route('/category', methods=['POST', 'PUT'], endpoint='update_category')
 @manage_database_connection
-def update_category() -> tuple:
+def update_category(db_connection: Connection) -> tuple:
     request_body: dict = request.get_json()
     try:
         category: Category = Category(**request_body)
     except KeyError:
         return {}, 400
 
-    Dao.save_category(category, DB_FILE_PATH)
+    Dao.save_category(category, db_connection)
 
     return {}, 201
 
 
 @app.route('/categories', methods=['GET'], endpoint='get_categories')
 @manage_database_connection
-def get_categories() -> tuple:
-    categories: List[Category] = Dao.get_categories(DB_FILE_PATH)
+def get_categories(db_connection) -> tuple:
+    categories: List[Category] = Dao.get_categories(db_connection)
     return jsonify([category.__dict__ for category in categories])
 
 
 @app.route('/category', methods=['DELETE'], endpoint='delete_category')
 @manage_database_connection
-def delete_category() -> tuple:
+def delete_category(db_connection: Connection) -> tuple:
     request_body: dict = request.get_json()
     category_id = request_body['id']
 
-    Dao.delete_category(category_id, DB_FILE_PATH)
+    Dao.delete_category(category_id, db_connection)
 
     return {}, 200
 
 
 @app.route('/report/<report_name>', methods=['GET'], endpoint='get_report')
 @manage_database_connection
-def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, str], int]]:
+def get_report(report_name: str, db_connection: Connection) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, str], int]]:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
 
@@ -153,7 +154,7 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
     else:
         end_date = datetime.date.today()
 
-    report_temp_file: AnyStr = ReportGenerator().to_stream(start_date, end_date)
+    report_temp_file: AnyStr = ReportGenerator(db_connection).to_stream(start_date, end_date)
     return Response(
         report_temp_file,
         headers={
