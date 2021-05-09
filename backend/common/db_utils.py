@@ -2,6 +2,7 @@ import functools
 import sqlite3
 from common.config import get_config
 
+
 def manage_database_connection(target_func) -> ():
 
     config: dict = get_config()
