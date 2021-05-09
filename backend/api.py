@@ -1,17 +1,19 @@
 import datetime
 import logging
+import sqlite3
 from decimal import Decimal
+from sqlite3 import Connection
 from typing import List, Union, Dict, AnyStr, Tuple
 
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
-from openpyxl import Workbook
-from openpyxl.writer.excel import save_virtual_workbook
+
+from common.db_utils import manage_database_connection
+from report_generator import ReportGenerator
 
 from common.config import get_config
 from common.dao import Dao
-from personal_budget.budget_report import ReportGenerator
-from personal_budget.common.models import Transaction, TransactionCategory, Category
+from common.models import Transaction, TransactionCategory, Category
 
 app = Flask(__name__)
 CORS(app)
@@ -23,8 +25,12 @@ logger.addHandler(logging.StreamHandler())
 config: dict = get_config()
 DB_FILE_PATH: str = config['sqlite_db_file_path']
 
+# Note:
+# The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
+# https://izziswift.com/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-function-main/
 
-@app.route('/transactions', methods=['GET'])
+
+@app.route('/transactions', methods=['GET'], endpoint='get_transactions')
 def get_transactions() -> tuple:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
@@ -41,23 +47,25 @@ def get_transactions() -> tuple:
     else:
         end_date = datetime.date.today()
 
-    transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, DB_FILE_PATH)
+    db_connection: Connection = get_database_connection()
+    transactions: List[Transaction] = Dao.get_transactions(start_date, end_date, db_connection)
 
     return {
         'transactions': [transaction.__dict__ for transaction in transactions]
     }, 200
 
 
-@app.route('/transaction/category', methods=['POST'])
+@app.route('/transaction/category', methods=['POST'], endpoint='create_transaction_categories')
 def create_transaction_categories() -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[TransactionCategory] = [TransactionCategory(**transaction_category) for transaction_category in request_body]
 
     transaction_categories_grouped_by_id: Dict[str, List[TransactionCategory]] = _group_transaction_categories_by_id(transaction_categories)
 
+    db_connection: Connection = get_database_connection()
     for transaction_id in transaction_categories_grouped_by_id.keys():
         # Check that the total amount matches the transaction amount.
-        transaction: Transaction = Dao.get_transaction(transaction_id, DB_FILE_PATH)
+        transaction: Transaction = Dao.get_transaction(transaction_id, db_connection)
         transaction_categories: List[TransactionCategory] = transaction_categories_grouped_by_id[transaction_id]
         transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
         if transaction.amount != transaction_category_amount_total:
@@ -66,12 +74,12 @@ def create_transaction_categories() -> Union[int, tuple]:
             }, 400
 
         for transaction_category in transaction_categories:
-            Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+            Dao.save_transaction_category(transaction_category, db_connection)
 
     return {}, 200
 
 
-@app.route('/transaction/category/<transaction_category_id>', methods=['PUT'])
+@app.route('/transaction/category/<transaction_category_id>', methods=['PUT'], endpoint='update_category_transaction')
 def update_category_transaction(transaction_category_id: int) -> tuple:
     request_body: dict = request.get_json()
 
@@ -81,7 +89,8 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
             TransactionCategory(**dictionary)
         )
 
-    transaction_category_amount: int = Dao.get_transaction_category_amount(transaction_category_id, DB_FILE_PATH)
+    db_connection: Connection = get_database_connection()
+    transaction_category_amount: int = Dao.get_transaction_category_amount(transaction_category_id, db_connection)
     transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
     if transaction_category_amount != transaction_category_amount_total:
         return {
@@ -89,14 +98,14 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
                               f'transaction category amount, {transaction_category_amount}'
                }, 400
 
-    Dao.delete_transaction_category(transaction_category_id, DB_FILE_PATH)
+    Dao.delete_transaction_category(transaction_category_id, db_connection)
     for transaction_category in transaction_categories:
-        Dao.save_transaction_category(transaction_category, DB_FILE_PATH)
+        Dao.save_transaction_category(transaction_category, db_connection)
 
     return {}, 200
 
 
-@app.route('/category', methods=['POST', 'PUT'])
+@app.route('/category', methods=['POST', 'PUT'], endpoint='update_category')
 def update_category() -> tuple:
     request_body: dict = request.get_json()
     try:
@@ -104,28 +113,32 @@ def update_category() -> tuple:
     except KeyError:
         return {}, 400
 
-    Dao.save_category(category, DB_FILE_PATH)
+    db_connection: Connection = get_database_connection()
+    Dao.save_category(category, db_connection)
 
     return {}, 201
 
 
-@app.route('/categories', methods=['GET'])
+@app.route('/categories', methods=['GET'], endpoint='get_categories')
 def get_categories() -> tuple:
-    categories: List[Category] = Dao.get_categories(DB_FILE_PATH)
+    db_connection: Connection = get_database_connection()
+    categories: List[Category] = Dao.get_categories(db_connection)
+
     return jsonify([category.__dict__ for category in categories])
 
 
-@app.route('/category', methods=['DELETE'])
+@app.route('/category', methods=['DELETE'], endpoint='delete_category')
 def delete_category() -> tuple:
     request_body: dict = request.get_json()
     category_id = request_body['id']
 
-    Dao.delete_category(category_id, DB_FILE_PATH)
+    db_connection: Connection = get_database_connection()
+    Dao.delete_category(category_id, db_connection)
 
     return {}, 200
 
 
-@app.route('/report/<report_name>', methods=['GET'])
+@app.route('/report/<report_name>', methods=['GET'], endpoint='get_report')
 def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, str], int]]:
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
@@ -142,7 +155,8 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
     else:
         end_date = datetime.date.today()
 
-    report_temp_file: AnyStr = ReportGenerator().to_stream(start_date, end_date)
+    db_connection: Connection = get_database_connection()
+    report_temp_file: AnyStr = ReportGenerator(db_connection).to_stream(start_date, end_date)
     return Response(
         report_temp_file,
         headers={
@@ -150,6 +164,32 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
             'Content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
     )
+
+
+@app.teardown_request
+def close_db_transaction_and_connection(error):
+    """Closes the database again at the end of the request."""
+    if error:
+        logger.error(error)
+
+        if hasattr(g, 'database_connection'):
+            g.database_connection.rollback()
+            g.database_connection.close()
+    else:
+        if hasattr(g, 'database_connection'):
+            g.database_connection.commit()
+            g.database_connection.close()
+
+
+def get_database_connection():
+    """Opens a new database connection if there is none yet for the
+    current application context.
+    """
+    if not hasattr(g, 'database_connection'):
+        db_file_path: str = config['sqlite_db_file_path']
+        g.database_connection = sqlite3.connect(db_file_path)
+
+    return g.database_connection
 
 
 def _group_transaction_categories_by_id(transaction_categories: List[TransactionCategory]) -> Dict[str, List[TransactionCategory]]:
@@ -165,7 +205,7 @@ def _group_transaction_categories_by_id(transaction_categories: List[Transaction
 
 if __name__ == '__main__':
     app.run(
-        host='localhost',
+        host='0.0.0.0',
         port=5000,
         debug=True
     )

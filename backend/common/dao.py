@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import date
+from sqlite3 import Connection
 from typing import List
 from common.models import Transaction, TransactionCategory, Category
 
@@ -7,8 +8,8 @@ from common.models import Transaction, TransactionCategory, Category
 class Dao:
 
     @staticmethod
-    def get_transactions(start_date: date, end_date: date, db_file_path: str) -> List[Transaction]:
-        db_connection = sqlite3.connect(db_file_path)
+    def get_transactions(start_date: date, end_date: date, db_connection: Connection) -> List[Transaction]:
+        # db_connection = sqlite3.connect(db_file_path)
         cursor = db_connection.cursor()
 
         db_results = cursor.execute(
@@ -62,8 +63,7 @@ class Dao:
         return transactions
 
     @staticmethod
-    def get_transaction(id: str, db_file_path: str) -> Transaction:
-        db_connection = sqlite3.connect(db_file_path)
+    def get_transaction(id: str, db_connection: Connection) -> Transaction:
         cursor = db_connection.cursor()
 
         db_result = cursor.execute(
@@ -110,8 +110,19 @@ class Dao:
         )
 
     @staticmethod
-    def save_transaction(transaction: Transaction, db_file_path: str) -> int:
-        db_connection = sqlite3.connect(db_file_path)
+    def transaction_exists(internal_id: str, db_connection: Connection) -> bool:
+        cursor = db_connection.cursor()
+
+        # Query the database to find out if a record with this internal_id exists already.
+        db_result = cursor.execute(
+            'SELECT count(*) FROM transactions WHERE internal_id = ?',
+            (internal_id,)
+        ).fetchone()
+
+        return db_result[0] != 0
+
+    @staticmethod
+    def save_transaction(transaction: Transaction, db_connection: Connection) -> int:
         cursor = db_connection.cursor()
 
         # Query the database to find out if a record with this id exists already.
@@ -124,17 +135,17 @@ class Dao:
         db_result = cursor.fetchone()
         if db_result[0] == 0:
             cursor.execute(
-                'INSERT INTO transactions (id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum)'
-                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO transactions (id, payee, type, date, amount, institution_id, memo, sic, mcc, checknum, internal_id)'
+                ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 (transaction.id, transaction.payee, None, transaction.date, transaction.amount, 'USAA', None,
-                 None, None, None,)
+                 None, None, None, transaction.internal_id,)
             )
         else:
             cursor.execute(
                 'UPDATE transactions '
-                '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ? '
+                '    SET payee = ?, type = ?, date =?, amount = ?, institution_id = ?, memo = ?, sic = ?, mcc = ?, checknum = ?, internal_id = ? '
                 '    WHERE id = ?',
-                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None,
+                (transaction.payee, None, transaction.date, transaction.amount, 'USAA', None, None, None, None, transaction.internal_id,
                  transaction.id,)
             )
 
@@ -147,8 +158,7 @@ class Dao:
         return last_rowid[0]
 
     @staticmethod
-    def save_transaction_category(transaction_category: TransactionCategory, db_file_path: str) -> None:
-        db_connection = sqlite3.connect(db_file_path)
+    def save_transaction_category(transaction_category: TransactionCategory, db_connection: Connection) -> None:
         cursor = db_connection.cursor()
 
         # Turn foreign keys on in SQLite database.
@@ -181,8 +191,7 @@ class Dao:
     #     db_connection.commit()
 
     @staticmethod
-    def delete_transaction_category(id: int, db_file_path: str) -> None:
-        db_connection = sqlite3.connect(db_file_path)
+    def delete_transaction_category(id: int, db_connection: Connection) -> None:
         cursor = db_connection.cursor()
 
         # Turn foreign keys on in SQLite database.
@@ -200,8 +209,7 @@ class Dao:
         db_connection.commit()
 
     @staticmethod
-    def get_transaction_category_amount(transaction_category_id: int, db_file_path: str) -> int:
-        db_connection = sqlite3.connect(db_file_path)
+    def get_transaction_category_amount(transaction_category_id: int, db_connection: Connection) -> int:
         cursor = db_connection.cursor()
 
         db_result = cursor.execute(
@@ -216,8 +224,7 @@ class Dao:
         return db_result[0]
 
     @staticmethod
-    def save_category(category: Category, db_file_path: str) -> None:
-        db_connection = sqlite3.connect(db_file_path)
+    def save_category(category: Category, db_connection: Connection) -> None:
         cursor = db_connection.cursor()
 
         # If the category has an id, then perform an UPDATE.
@@ -237,8 +244,7 @@ class Dao:
         db_connection.commit()
 
     @staticmethod
-    def delete_category(category_id: int, db_file_path: str) -> None:
-        db_connection = sqlite3.connect(db_file_path)
+    def delete_category(category_id: int, db_connection: Connection) -> None:
         cursor = db_connection.cursor()
 
         cursor.execute(
@@ -253,14 +259,14 @@ class Dao:
         db_connection.commit()
 
     @staticmethod
-    def get_categories(db_file_path: str) -> List[Category]:
-        db_connection = sqlite3.connect(db_file_path)
+    def get_categories(db_connection: Connection) -> List[Category]:
         cursor = db_connection.cursor()
 
         db_results = cursor.execute(
             '''
             SELECT id, name
             FROM category
+            ORDER BY name ASC
             '''
         ).fetchall()
 

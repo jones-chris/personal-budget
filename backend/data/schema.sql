@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS transaction_categories;
 
 CREATE TABLE IF NOT EXISTS transactions(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    internal_id TEXT NOT NULL,
 	payee TEXT NOT NULL,
 	type TEXT,
 	date TIMESTAMP NOT NULL,
