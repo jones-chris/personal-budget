@@ -8,10 +8,9 @@ from typing import List, Union, Dict, AnyStr, Tuple
 from flask import Flask, request, jsonify, Response, g
 from flask_cors import CORS
 
-from common.db_utils import manage_database_connection
 from report_generator import ReportGenerator
 
-from common.config import get_config
+from common.config import Config
 from common.dao import Dao
 from common.models import Transaction, TransactionCategory, Category
 
@@ -22,8 +21,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-config: dict = get_config()
-DB_FILE_PATH: str = config['sqlite_db_file_path']
+config: Config = Config()
+DB_FILE_PATH: str = config.DB_FILE_PATH
 
 # Note:
 # The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
@@ -156,7 +155,7 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
         end_date = datetime.date.today()
 
     db_connection: Connection = get_database_connection()
-    report_temp_file: AnyStr = ReportGenerator(db_connection).to_stream(start_date, end_date)
+    report_temp_file: AnyStr = ReportGenerator(db_connection).to_stream(start_date, end_date, report_name)
     return Response(
         report_temp_file,
         headers={
@@ -164,6 +163,11 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
             'Content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         }
     )
+
+
+@app.route('/reports', methods=['GET'], endpoint='get_reports')
+def get_reports() -> tuple:
+    return jsonify([report.__dict__ for report in config.reports])
 
 
 @app.teardown_request
@@ -186,7 +190,7 @@ def get_database_connection():
     current application context.
     """
     if not hasattr(g, 'database_connection'):
-        db_file_path: str = config['sqlite_db_file_path']
+        db_file_path: str = config.DB_FILE_PATH
         g.database_connection = sqlite3.connect(db_file_path)
 
     return g.database_connection

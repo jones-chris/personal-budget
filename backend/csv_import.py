@@ -44,7 +44,9 @@ def main() -> None:
 
     try:
         for csv_import in config.csv_imports:
-            csv_dir: str = f'{config.TRANSACTIONS_DIR_FILE_PATH}/{csv_import.directory}'
+            # Get the directory for this CsvImport (ex:  transactions, investments, home value, etc).
+            data_type_dir: str = config.get_data_type_dir(csv_import.data_type)
+            csv_dir: str = f'{data_type_dir}/{csv_import.directory}'
 
             for file_name in os.listdir(csv_dir):
                 if file_name.endswith('.csv'):
