@@ -131,7 +131,7 @@ class SplitTransactionModal extends Component {
 		)
 
 		if (response.status === 200) {
-			this.props.onCloseHandler();
+			this.props.onCloseModalHandler();
 		} else {
 			let responseJson = await response.json();
 			console.log(responseJson);

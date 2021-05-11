@@ -18,7 +18,8 @@ class App extends Component {
             hidden: false
           },
           transactions: {
-            hidden: true
+            hidden: true,
+            refreshTransactions: false
           },
           categories: {
             hidden: true
@@ -35,6 +36,7 @@ class App extends Component {
 
         this.showSplitTransactionModal = this.showSplitTransactionModal.bind(this);
         this.hideSplitTransactionModal = this.hideSplitTransactionModal.bind(this);
+        this.afterRefreshTransactionsHandler = this.afterRefreshTransactionsHandler.bind(this);
     }
 
     showSplitTransactionModal = (transactionId, transactionCategoryId) => {
@@ -55,6 +57,14 @@ class App extends Component {
       newState.splitTransactionModal.transactionCategoryId = null;
 
       newState.transactions.hidden = false;
+      newState.transactions.refreshTransactions = true;
+
+      this.setState(newState);
+    }
+
+    afterRefreshTransactionsHandler = () => {
+      let newState = {...this.state};
+      newState.transactions.refreshTransactions = false;
 
       this.setState(newState);
     }
@@ -68,6 +78,8 @@ class App extends Component {
 
           <Transaction hidden={this.state.transactions.hidden}
                        showSplitTransactionModalFunc={(transactionId, transactionCategoryId) => this.showSplitTransactionModal(transactionId, transactionCategoryId)}
+                       refreshTransactions={this.state.transactions.refreshTransactions}
+                       afterRefreshTransactionsHandler={this.afterRefreshTransactionsHandler}
           />
 
           <Category hidden={this.state.categories.hidden}
