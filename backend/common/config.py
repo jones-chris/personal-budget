@@ -1,4 +1,3 @@
-import csv
 import enum
 import json
 import logging
@@ -13,13 +12,17 @@ logger.addHandler(logging.StreamHandler())
 
 class Report:
 
-    def __init__(
-            self,
-            name: str,
-            include_transactions: bool
-    ):
-        self.name: str = name
-        self.include_transactions: bool = include_transactions
+    name: str
+    import_transactions: bool
+    import_categories: bool
+
+    @staticmethod
+    def from_dict(**kwargs):
+        report: Report = Report()
+        for key, value in kwargs.items():
+            setattr(report, key, value)
+
+        return report
 
 
 class DataType(enum.Enum):
@@ -33,7 +36,6 @@ class CsvImport:
     directory: str
     headers: List[str]
     mappings: Dict[str, List[str]]
-    unique_composite_fields: List[str]
     data_type: DataType
 
     @staticmethod
@@ -106,18 +108,6 @@ class Config:
     TRANSACTIONS_DIR_FILE_PATH: str = f'{CONFIG_DIR_FILE_PATH}/transactions'
     REPORTS_DIR_FILE_PATH: str = f'{CONFIG_DIR_FILE_PATH}/reports'
 
-    # def __init__(
-    #         self,
-    #         reports: List[Report],
-    #         csv_imports: List[CsvImport],
-    #         ofx_imports: List[OfxImport],
-    #         db_file_path: str
-    # ):
-    #     self.reports: List[Report] = reports
-    #     self.csv_imports: List[CsvImport] = csv_imports
-    #     self.ofx_imports: List[OfxImport] = ofx_imports
-    #     self.db_file_path: str = db_file_path
-
     def __init__(self) -> None:
         # Get configuration file.
         if not os.path.exists(self.CONFIG_DIR_FILE_PATH):
@@ -142,6 +132,24 @@ class Config:
             config = json.load(config_file)
             self._build_ofx_imports(config)
             self._build_csv_imports(config)
+            self._build_reports(config)
+
+    def get_data_type_dir(self, data_type: DataType) -> str:
+        """Given a DataType, return the directory path that contains files for that DataType."""
+        if DataType.TRANSACTION.name == data_type:
+            return self.TRANSACTIONS_DIR_FILE_PATH
+        # todo:  add more DataType enum values and their directory mappings here.
+        else:
+            raise ValueError(f'No dir mapping found for data type, {data_type}')
+
+    def get_report(self, report_name: str) -> Report:
+        reports_with_name = [report for report in self.reports if report.name == report_name]
+        if len(reports_with_name) == 0:
+            raise ValueError(f'Could not find report with name, {report_name}')
+        elif len(reports_with_name) > 1:
+            raise ValueError(f'Found more than 1 report with name, {report_name}')
+        else:
+            return reports_with_name[0]
 
     def _build_ofx_imports(self, config: dict) -> None:
         ofx_dicts: List[dict] = config['imports']['ofx']
@@ -162,3 +170,13 @@ class Config:
             csv_imports.append(csv_import)
 
         self.csv_imports = csv_imports
+
+    def _build_reports(self, config: dict) -> None:
+        report_dicts: List[dict] = config['reports']
+
+        reports: List[Report] = []
+        for report_dict in report_dicts:
+            report: Report = Report.from_dict(**report_dict)
+            reports.append(report)
+
+        self.reports = reports

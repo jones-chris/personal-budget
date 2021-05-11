@@ -144,6 +144,11 @@ class Transaction extends Component {
 				
 				this.setState({...this.state, initialized: true})
 			}
+
+			if (this.props.refreshTransactions) {
+				this.getTransactions();
+				this.props.afterRefreshTransactionsHandler();
+			}
 		}
 
 		// Create transactions JSX.

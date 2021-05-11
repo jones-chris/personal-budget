@@ -11,14 +11,27 @@ class Reports extends Component {
 		this.state = {
 			startDate: null,
 			endDate: null,
-			report: null
+			report: null,
+			reports: [],
+			initialized: false
 		};
+	}
+
+	getReports = () => {
+		fetch(
+			'http://localhost:5000/reports'
+		).then(response => response.json())
+		.then(responseJson => {
+			let newState = {...this.state};
+			newState.reports = responseJson;
+			this.setState(newState);
+		})
 	}
 
 	getReport = () => {
 		// todo:  parameterize the report name from the API config.
 		fetch(
-            `http://localhost:5000/report/budget-to-variance-report?startDate=${this.state.startDate}&endDate=${this.state.endDate}`
+            `http://localhost:5000/report/${this.state.report}?startDate=${this.state.startDate}&endDate=${this.state.endDate}`
 		).then(response => response.blob())
 		 .then(blob => {
 			const file = window.URL.createObjectURL(blob);
@@ -27,14 +40,26 @@ class Reports extends Component {
 	}
 
 	render() {
+		if (!this.props.hidden) {
+			if (!this.state.initialized) {
+				this.getReports();
+				this.setState({...this.state, initialized: true});
+			}
+		}
+
+		let reportOptionsJsx = [];
+		// Default empty option.
+		reportOptionsJsx.push(
+			<option selected></option>
+		);
+		this.state.reports.forEach(report => {
+			reportOptionsJsx.push(
+				<option value={report.name}>{report.name}</option>
+			);
+		})
+
 		return (
 			<div hidden={this.props.hidden.toString() === 'true'}>
-				{/*<input type="date" 
-					   id="fromDate"
-					   onChange={(event) => this.setState({...this.state, startDate: event.target.value})}
-			    >
-				</input>*/}
-
 				<span>
 					<label for="report"
 					>
@@ -43,8 +68,7 @@ class Reports extends Component {
 					<select id="report"
  							onChange={(event) => this.setState({...this.state, report: event.target.value})}
 					>
-						<option selected></option>
-						<option value="budget-to-variance-report">Budget-to-Variance Report</option>
+						{reportOptionsJsx}
 					</select>
 
 					<label for="fromDate"
