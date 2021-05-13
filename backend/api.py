@@ -6,27 +6,27 @@ from sqlite3 import Connection
 from typing import List, Union, Dict, AnyStr, Tuple
 
 from flask import Flask, request, jsonify, Response, g
-from flask_cors import CORS
+# from flask_cors import CORS
 
-from report_generator import ReportGenerator
+from .common.report_generator import ReportGenerator
 
-from common.config import Config
-from common.dao import Dao
-from common.models import Transaction, TransactionCategory, Category
-
-app = Flask(__name__)
-CORS(app)
+from .common.config import Config
+from .common.dao import Dao
+from .common.models import Transaction, TransactionCategory, Category
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-config: Config = Config()
-DB_FILE_PATH: str = config.DB_FILE_PATH
-
 # Note:
 # The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
 # https://izziswift.com/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-function-main/
+
+
+app = Flask(__name__, static_folder='./build', static_url_path='/')
+# CORS(app)
+
+config: Config = Config()
 
 
 @app.route('/transactions', methods=['GET'], endpoint='get_transactions')
@@ -213,3 +213,5 @@ if __name__ == '__main__':
         port=5000,
         debug=True
     )
+else:
+    app
