@@ -12,10 +12,6 @@ import common.report_generator as report_generator
 import common.config as config
 import common.dao as dao
 import common.models as models
-# from .common.report_generator import ReportGenerator
-# from .common.config import Config
-# from .common.dao import Dao
-# from .common.models import Transaction, TransactionCategory, Category
 
 app = Flask(__name__, static_url_path='/', static_folder='../ui/build', template_folder='../ui/build')
 CORS(app)
@@ -24,8 +20,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-app_contet: config.Config = config.Config()
-DB_FILE_PATH: str = app_contet.DB_FILE_PATH
+app_context: config.Config = config.Config()
+DB_FILE_PATH: str = app_context.DB_FILE_PATH
 
 # Note:
 # The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
@@ -175,7 +171,7 @@ def get_report(report_name: str) -> Union[Tuple[AnyStr, int], Tuple[Dict[str, st
 
 @app.route('/reports', methods=['GET'], endpoint='get_reports')
 def get_reports() -> tuple:
-    return jsonify([report.__dict__ for report in app_contet.reports])
+    return jsonify([report.__dict__ for report in app_context.reports])
 
 
 @app.teardown_request
@@ -198,7 +194,7 @@ def get_database_connection():
     current application context.
     """
     if not hasattr(g, 'database_connection'):
-        db_file_path: str = app_contet.DB_FILE_PATH
+        db_file_path: str = app_context.DB_FILE_PATH
         g.database_connection = sqlite3.connect(db_file_path)
 
     return g.database_connection
