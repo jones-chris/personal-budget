@@ -5,9 +5,9 @@ import shutil
 import sqlite3
 from sqlite3 import Connection
 
-from common.config import Config
-from common.dao import Dao
-from common.models import Transaction, TransactionCategory
+from .common.config import Config
+from .common.dao import Dao
+from .common.models import Transaction, TransactionCategory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

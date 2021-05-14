@@ -3,9 +3,9 @@ import logging
 from sqlite3 import Connection
 from typing import List, AnyStr
 from openpyxl import load_workbook, Workbook
-from common.config import Config, Report
-from common.dao import Dao
-from common.models import Transaction, Category
+from .config import Config, Report
+from .dao import Dao
+from .models import Transaction, Category
 from tempfile import NamedTemporaryFile
 
 
