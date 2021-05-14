@@ -8,10 +8,10 @@ from typing import List, Union, Dict, AnyStr, Tuple
 from flask import Flask, request, jsonify, Response, g, render_template
 from flask_cors import CORS
 
-import common.report_generator as report_generator
-import common.config as config
-import common.dao as dao
-import common.models as models
+import report_generator as report_generator
+import config as config
+import dao as dao
+import models as models
 
 app = Flask(__name__, static_url_path='/', static_folder='../ui/build', template_folder='../ui/build')
 CORS(app)
@@ -63,7 +63,8 @@ def create_transaction_categories() -> Union[int, tuple]:
     request_body: List[dict] = request.get_json()
     transaction_categories: List[models.TransactionCategory] = [models.TransactionCategory(**transaction_category) for transaction_category in request_body]
 
-    transaction_categories_grouped_by_id: Dict[str, List[models.TransactionCategory]] = _group_transaction_categories_by_id(transaction_categories)
+    transaction_categories_grouped_by_id: Dict[str, List[
+        models.TransactionCategory]] = _group_transaction_categories_by_id(transaction_categories)
 
     db_connection: Connection = get_database_connection()
     for transaction_id in transaction_categories_grouped_by_id.keys():
@@ -200,7 +201,8 @@ def get_database_connection():
     return g.database_connection
 
 
-def _group_transaction_categories_by_id(transaction_categories: List[models.TransactionCategory]) -> Dict[str, List[models.TransactionCategory]]:
+def _group_transaction_categories_by_id(transaction_categories: List[models.TransactionCategory]) -> Dict[str, List[
+    models.TransactionCategory]]:
     grouped_transaction_categories: Dict[str, List[models.TransactionCategory]] = {}
     for transaction_category in transaction_categories:
         if transaction_category.transaction_id in grouped_transaction_categories.keys():

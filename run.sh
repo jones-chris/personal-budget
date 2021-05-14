@@ -6,9 +6,6 @@ if [ "$APP" = "" ]; then
 elif [ "$APP" = "webapp" ]; then
   echo "Running the web app (the API and UI)"
   ./run-webapp.sh
-elif [ "$APP" = "api-only" ]; then
-  echo "Running the API only"
-  ./run-api.sh
 elif [ "$APP" = "ofx-import" ]; then
   echo "Running the OFX import"
   ./run-ofx-import.sh
