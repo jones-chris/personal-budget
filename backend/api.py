@@ -14,7 +14,7 @@ from common.config import Config
 from common.dao import Dao
 from common.models import Transaction, TransactionCategory, Category
 
-app = Flask(__name__, static_url_path='/', static_folder='./build', template_folder='./build')
+app = Flask(__name__, static_url_path='/', static_folder='../ui/build', template_folder='../ui/build')
 CORS(app)
 
 logger = logging.getLogger(__name__)
