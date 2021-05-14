@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlite3 import Connection
 from typing import List, Union, Dict, AnyStr, Tuple
 
-from flask import Flask, request, jsonify, Response, g
+from flask import Flask, request, jsonify, Response, g, render_template
 from flask_cors import CORS
 
 from report_generator import ReportGenerator
@@ -14,7 +14,7 @@ from common.config import Config
 from common.dao import Dao
 from common.models import Transaction, TransactionCategory, Category
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/', static_folder='./build', template_folder='./build')
 CORS(app)
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,11 @@ DB_FILE_PATH: str = config.DB_FILE_PATH
 # Note:
 # The @app.route `endpoint` parameter is needed in order to prevent a Flask AssertionError.  See Solution #3 in this link:
 # https://izziswift.com/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-function-main/
+
+
+@app.route('/', methods=['GET'], endpoint='serve_ui')
+def serve_ui():
+    return render_template('index.html')
 
 
 @app.route('/transactions', methods=['GET'], endpoint='get_transactions')
