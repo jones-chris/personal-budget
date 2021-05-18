@@ -2,7 +2,7 @@ import sqlite3
 from datetime import date
 from sqlite3 import Connection
 from typing import List
-from .models import Transaction, TransactionCategory, Category
+from models import Transaction, TransactionCategory, Category
 
 
 class Dao:

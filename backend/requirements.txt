@@ -4,3 +4,4 @@ ofxparse==0.20
 Flask==1.1.2
 openpyxl==3.0.7
 Flask-Cors==3.0.10
+uWSGI==2.0.19.1

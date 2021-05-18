@@ -43,3 +43,11 @@ If you'd like to schedule the above script to run on a regular schedule, you can
 ```
 
 You can use the following site to generate a cron job:  https://crontab-generator.org/
+
+###Using the Docker Image
+1) Pull the docker image `docker pull personal-budget:latest`.
+2) Run the image with `sudo docker run -v /aboslute/path/to/budget/directory:/personal-budget/data --publish 5000:5000 personal-budget:latest`
+This command will mount your budget directory into the container and publish or "connect" the container's port 5000 to your
+   local machine's port 5000 so that your browser can communicate with the API.
+3) Go to `http://localhost:5000` in a browser to see the personal-budget UI.
+4) To kill the container, open another terminal, run `docker ps`, get the ID of the container, and then run `docker stop <ID>`.
