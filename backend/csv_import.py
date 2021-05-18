@@ -3,7 +3,9 @@ import logging
 import os
 import shutil
 import sqlite3
+import time
 from sqlite3 import Connection
+import schedule
 
 from config import Config
 from dao import Dao
@@ -38,7 +40,9 @@ def save_transaction(transaction: Transaction, db_connection: Connection) -> int
         return 0
 
 
-def main() -> None:
+def import_csv_files() -> None:
+    logger.info('Inside import_csv_files')
+
     config: Config = Config()
     db_connection: Connection = sqlite3.connect(config.DB_FILE_PATH)
 
@@ -95,13 +99,24 @@ def main() -> None:
                     logger.info(f'Moved file to {archive_dir}')
 
         db_connection.close()
+        logger.info('Finished import_csv_files')
     except Exception as e:
         logger.error(e)
         db_connection.rollback()
         db_connection.close()
 
 
-if __name__ == '__main__':
-    logger.info("Starting csv import")
-    main()
-    logger.info("Finished csv import")
+# Schedule the csv import task to run every minute.
+schedule.every(1).minutes.do(import_csv_files)
+
+while True:
+    logger.info('Looking for csv files to import')
+    schedule.run_pending()
+
+    logger.info('Finished running csv import')
+    time.sleep(1)
+
+# if __name__ == '__main__':
+#     logger.info("Starting csv import")
+#     main()
+#     logger.info("Finished csv import")

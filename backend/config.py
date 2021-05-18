@@ -2,6 +2,7 @@ import enum
 import json
 import logging
 import os
+import distutils.dir_util
 import sys
 from typing import List, Union, Dict, OrderedDict
 
@@ -107,12 +108,17 @@ class Config:
     CONFIG_JSON_FILE_PATH: str = f'{CONFIG_DIR_FILE_PATH}/config.json'
     TRANSACTIONS_DIR_FILE_PATH: str = f'{CONFIG_DIR_FILE_PATH}/transactions'
     REPORTS_DIR_FILE_PATH: str = f'{CONFIG_DIR_FILE_PATH}/reports'
+    SAMPLE_CONFIG_DIR_FILE_PATH: str = './sample_budget_dir/budget'
 
     def __init__(self) -> None:
-        # Get configuration file.
+        # Check that the budget directory exists.
         if not os.path.exists(self.CONFIG_DIR_FILE_PATH):
             logger.error(f'{self.CONFIG_DIR_FILE_PATH} does not exist')
             exit(1)
+
+        # Check that the directory is not empty.  If so, create a new one.
+        if len(os.listdir(self.CONFIG_DIR_FILE_PATH)) == 0:
+            distutils.dir_util.copy_tree(self.SAMPLE_CONFIG_DIR_FILE_PATH, self.CONFIG_DIR_FILE_PATH)
 
         # Check that the config file is a json file.
         root, extension = os.path.splitext(self.CONFIG_JSON_FILE_PATH)

@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#python3 ./backend/api.py ./data
-#uwsgi --http :5000 -s /tmp/personal-budget.sock --manage-script-name --mount /=backend.api:app --pyargv "/home/pc/Documents/budget"
 cd backend/
-#uwsgi --http :5000 -s /tmp/personal-budget.sock --manage-script-name --mount /=api:app --pyargv "./data"
-#uwsgi --socket 0.0.0.0:5000 --protocol=http -w  --mount /=backend.api:app --pyargv "./data"
+
+# Start CSV import file listener as a background process.
+python3 ./csv_import.py /personal-budget/data &
+
+# Start API.
 uwsgi --http :5000 -s /tmp/personal-budget.sock --manage-script-name --mount /=api:app --pyargv "/personal-budget/data"

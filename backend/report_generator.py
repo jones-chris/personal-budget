@@ -97,7 +97,3 @@ class ReportGenerator:
             row = categories_data_range[i]
             row[0].value = category.id
             row[1].value = category.name
-
-# # If this script is run directly from the terminal, then create a budget report file.
-# if __name__ == '__main__':
-#     ReportGenerator().to_file()
