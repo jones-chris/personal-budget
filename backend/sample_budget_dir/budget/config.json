@@ -1,0 +1,47 @@
+{
+  "reports": [
+    {
+      "name": "My Spreadsheet.xlsx",
+      "import_transactions": true,
+      "import_categories": true
+    }
+  ],
+  "imports": {
+    "csv": [
+      {
+        "data_type": "TRANSACTION",
+        "directory": "myBank",
+        "headers": [
+          "posted",
+          "blank1",
+          "date",
+          "blank2",
+          "description",
+          "category",
+          "amount"
+        ],
+        "mappings": {
+          "payee": [
+            "description"
+          ],
+          "date": [
+            "date"
+          ],
+          "amount": [
+            "amount"
+          ]
+        }
+      }
+    ],
+    "ofx": [
+      {
+        "member_id": "abc123",
+        "password": "def456",
+        "institution_id": "12345",
+        "url": "https://my.bank.com/ofx/OFXServlet",
+        "organization_name": "MyBank",
+        "data_type": "TRANSACTION"
+      }
+    ]
+  }
+}
