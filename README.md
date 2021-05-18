@@ -1,8 +1,8 @@
-#Personal Budget
+# Personal Budget
 
-##Use
+## Use
 
-###Initial Set Up
+### Initial Set Up
 1. Create a directory/folder on your computer that will hold all your personal financial transactions.
 
 ### Starting the app
