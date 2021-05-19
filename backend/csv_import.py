@@ -115,8 +115,3 @@ while True:
 
     logger.info('Finished running csv import')
     time.sleep(1)
-
-# if __name__ == '__main__':
-#     logger.info("Starting csv import")
-#     main()
-#     logger.info("Finished csv import")
