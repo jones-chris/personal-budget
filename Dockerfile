@@ -16,7 +16,6 @@ COPY ./manifest.json .
 COPY ./run.sh .
 COPY ./run-webapp.sh .
 COPY ./run-ofx-import.sh .
-COPY ./run-csv-import.sh .
 
 # Create the directory that the user's budget data will be mounted into.
 RUN mkdir data

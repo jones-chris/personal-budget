@@ -9,9 +9,6 @@ elif [ "$APP" = "webapp" ]; then
 elif [ "$APP" = "ofx-import" ]; then
   echo "Running the OFX import"
   ./run-ofx-import.sh
-elif [ "$APP" = "csv-import" ]; then
-  echo "Running the CSV import"
-  ./run-csv-import.sh
 else
   echo "$APP not recognized"
   exit 1
