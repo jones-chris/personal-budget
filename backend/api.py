@@ -95,7 +95,7 @@ def update_category_transaction(transaction_category_id: int) -> tuple:
 
     db_connection: Connection = get_database_connection()
     transaction_category_amount: int = dao.Dao.get_transaction_category_amount(transaction_category_id, db_connection)
-    transaction_category_amount_total: Decimal = sum([transaction_category.amount for transaction_category in transaction_categories])
+    transaction_category_amount_total: Decimal = round(sum([transaction_category.amount for transaction_category in transaction_categories]), 2)
     if transaction_category_amount != transaction_category_amount_total:
         return {
                    'message': f'The sum of the transaction categories, {transaction_category_amount_total}, must equal the '
