@@ -65,7 +65,7 @@ class TransactionCategory:
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id', None)
-        self.category_id = kwargs['category_id'] if kwargs['category_id'] else 1
+        self.category_id = kwargs.get('category_id', 1)
         self.transaction_id = kwargs['transaction_id']
         self.amount = kwargs['amount']
 
