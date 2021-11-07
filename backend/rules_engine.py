@@ -38,6 +38,10 @@ class RulesEngine:
                 lambda s: s.endswith(rule.matching_text)
         }
 
-        logger.info(f'Found matching function for {rule.matching_operator}')
+        try:
+            func = matching_functions[rule.matching_operator]
+        except KeyError as e:
+            logger.error(f'Did not find matching function for {rule.matching_operator}')
+            raise e
 
-        return matching_functions[rule.matching_operator](payee)
+        return func(payee)
