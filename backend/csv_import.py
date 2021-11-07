@@ -5,11 +5,13 @@ import shutil
 import sqlite3
 import time
 from sqlite3 import Connection
+
 import schedule
 
 from config import Config
 from dao import Dao
 from models import Transaction, TransactionCategory
+from rules_engine import RulesEngine
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -28,7 +30,7 @@ def save_transaction(transaction: Transaction, db_connection: Connection) -> int
 
         transaction_category: TransactionCategory = TransactionCategory(
             **{
-                'category_id': 1,
+                'category_id': transaction.category_id,
                 'transaction_id': generated_id,
                 'amount': transaction.amount
             }
@@ -81,11 +83,14 @@ def import_csv_files() -> None:
                                     'memo': None,
                                     'sic': None,
                                     'mcc': None,
-                                    'checknum': None,
-                                    'category_id': 1  # Default to the Uncategorized category.
+                                    'checknum': None
                                 }
                             )
 
+                            # Try to apply rules to the transaction in order to update the transaction's category_id.
+                            RulesEngine.apply_rules(config.rules, transaction)
+
+                            # Save the transaction to the database.
                             records_inserted = save_transaction(transaction, db_connection)
                             num_of_transactions_inserted = num_of_transactions_inserted + records_inserted
 
