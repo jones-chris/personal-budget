@@ -145,3 +145,15 @@ To stop the docker container open another terminal, run `docker ps`, get the ID 
 and replace the docker container ID where the `<ID>` placeholder is.  I hope to find a more graceful way to stop the application 
 in the future.
    
+## Local Development
+
+### Docker
+
+1) To build and tag an image locally, run `sudo docker build --tag joneschris/personal-budget:local .` from the root directory 
+of this project.
+2) To run the image locally, run `sudo docker run -v <the absolute path to your budget directory>:/personal-budget/data --publish 5000:5000 joneschris/personal-budget:latest`, 
+with the `<the absolute path to your budget directory>` replaced with the absolute path to your budget directory, such as
+`/home/jones-chris/Documents/budget`
+Alternatively, you can create an alias in your `~/.bashrc` file (assuming you're using Ubuntu) like this:
+`alias pb='sudo docker run -v /home/pc/Documents/budget:/personal-budget/data --publish 5000:5000 joneschris/personal-budget:latest'
+`

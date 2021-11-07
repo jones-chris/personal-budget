@@ -21,7 +21,7 @@ class Transaction:
             self.sic: str = transaction.sic
             self.mcc: str = transaction.mcc
             self.checknum: str = transaction.checknum
-            self.category_id: int = None
+            self.category_id: int = 1
             self.transaction_amount: Decimal = transaction.amount
             self.internal_id = self.payee + str(self.date) + str(self.amount)
 
@@ -39,7 +39,7 @@ class Transaction:
         transaction.sic = kwargs['sic']
         transaction.mcc = kwargs['mcc']
         transaction.checknum = kwargs['checknum']
-        transaction.category_id = kwargs.get('category_id', None)
+        transaction.category_id = kwargs.get('category_id', 1)
         transaction.transaction_category_id = kwargs.get('transaction_category_id', None)
         transaction.transaction_amount = kwargs.get('transaction_amount', None)
         transaction.internal_id = transaction.payee + str(transaction.date) + str(transaction.amount)
@@ -65,7 +65,7 @@ class TransactionCategory:
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id', None)
-        self.category_id = kwargs['category_id']
+        self.category_id = kwargs.get('category_id', 1)
         self.transaction_id = kwargs['transaction_id']
         self.amount = kwargs['amount']
 

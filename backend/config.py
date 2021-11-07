@@ -4,6 +4,7 @@ import logging
 import os
 import distutils.dir_util
 import sys
+import typing
 from typing import List, Union, Dict, OrderedDict
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,39 @@ class OfxImport:
         return ofx_import
 
 
+class Rule:
+
+    class MatchingOperator(enum.Enum):
+        IS = 'is',
+        IS_NOT = 'is not'
+        CONTAINS = 'contains',
+        STARTS_WITH = 'starts with',
+        ENDS_WITH = 'ends with'
+
+    # payee: str
+    matching_operator: MatchingOperator
+    matching_text: str
+    category_id: int
+
+    @staticmethod
+    def from_dict(**kwargs):
+        rule: Rule = Rule()
+        type_hints: Dict = typing.get_type_hints(Rule)
+        for key, value in kwargs.items():
+            logger.info(f'key={key} value={value}')
+            field_type = type_hints[key]
+            logger.info(f'field_type is {str(field_type)}')
+
+            if issubclass(field_type, enum.Enum):  # In the case the field is an enum, like the matching_operator, get the enum value matching the value.
+                logger.info('field_type is a subclass of enum.Enum')
+                setattr(rule, key, field_type[value.upper()])
+            else:
+                logger.info('field_type is not a subclass of enum.Enum')
+                setattr(rule, key, value)
+
+        return rule
+
+
 class Config:
 
     CONFIG_DIR_FILE_PATH: str = sys.argv[1]
@@ -139,6 +173,7 @@ class Config:
             self._build_ofx_imports(config)
             self._build_csv_imports(config)
             self._build_reports(config)
+            self._build_rules(config)
 
     def get_data_type_dir(self, data_type: DataType) -> str:
         """Given a DataType, return the directory path that contains files for that DataType."""
@@ -186,3 +221,13 @@ class Config:
             reports.append(report)
 
         self.reports = reports
+
+    def _build_rules(self, config: dict) -> None:
+        rule_dicts: List[dict] = config['rules']
+
+        rules: List[Rule] = []
+        for rule_dict in rule_dicts:
+            rule: Rule = Rule.from_dict(**rule_dict)
+            rules.append(rule)
+
+        self.rules = rules
