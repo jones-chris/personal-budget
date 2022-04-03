@@ -35,7 +35,7 @@ class Dao:
             WHERE t.date BETWEEN ? and ? 
             ORDER BY t.date DESC
             ''',
-            (start_date.strftime('%m/%d/%Y'), end_date.strftime('%m/%d/%Y'),)
+            (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'),)
         ).fetchall()
 
         transactions: List[Transaction] = []
